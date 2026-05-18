@@ -1,15 +1,23 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-// Health check
+const IMAGES_DIR = path.join(__dirname, 'public', 'images');
+if (!fs.existsSync(IMAGES_DIR)) {
+  fs.mkdirSync(IMAGES_DIR, { recursive: true });
+}
+
+app.use('/images', express.static(IMAGES_DIR));
+
 app.get('/healthz', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Gera imagem a partir de HTML e CSS
 app.post('/generate', async (req, res) => {
   const { html, css, width = 1080, height = 1440, google_fonts } = req.body;
 
@@ -21,6 +29,7 @@ app.post('/generate', async (req, res) => {
   try {
     browser = await puppeteer.launch({
       headless: 'new',
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -34,7 +43,6 @@ app.post('/generate', async (req, res) => {
     const page = await browser.newPage();
     await page.setViewport({ width, height, deviceScaleFactor: 1 });
 
-    // Monta fontes do Google
     const fontLink = google_fonts
       ? `<link rel="preconnect" href="https://fonts.googleapis.com" />
          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -58,29 +66,25 @@ app.post('/generate', async (req, res) => {
 </html>`;
 
     await page.setContent(fullHtml, { waitUntil: 'networkidle0', timeout: 30000 });
-
-    // Aguarda fontes carregarem
     await page.evaluateHandle('document.fonts.ready');
 
-    const screenshot = await page.screenshot({
+    const filename = `${crypto.randomUUID()}.jpg`;
+    const filepath = path.join(IMAGES_DIR, filename);
+
+    await page.screenshot({
       type: 'jpeg',
       quality: 92,
       clip: { x: 0, y: 0, width, height },
+      path: filepath,
     });
 
     await browser.close();
 
-    // Retorna imagem em base64 e também como buffer
-    const base64 = screenshot.toString('base64');
-    const url = `data:image/jpeg;base64,${base64}`;
+    const PORT = process.env.PORT || 3000;
+    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+    const url = `${baseUrl}/images/${filename}`;
 
-    res.json({
-      url,
-      base64,
-      width,
-      height,
-      format: 'jpeg',
-    });
+    res.json({ url, id: filename.replace('.jpg', '') });
 
   } catch (err) {
     if (browser) await browser.close();
