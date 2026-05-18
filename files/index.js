@@ -23,8 +23,9 @@ app.get('/healthz', (req, res) => {
 async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, storyHeight = 1920) {
   const storyHandle = '@seucasorio.ofc';
   const handleGap = 28;
-  const postMaxWidth = Math.round(storyWidth * 0.86);
+  const postMaxWidth = Math.round(storyWidth * 0.8);
   const postMaxHeight = Math.round(storyHeight * 0.76);
+  const postBorderRadius = 32;
 
   const backgroundBuffer = await sharp(postPath)
     .resize(storyWidth, storyHeight, {
@@ -44,9 +45,7 @@ async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, story
       fit: 'inside',
       withoutEnlargement: true,
     })
-    .jpeg({
-      quality: 92,
-    })
+    .png()
     .toBuffer();
 
   const foregroundMetadata = await sharp(foregroundBuffer).metadata();
@@ -57,6 +56,60 @@ async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, story
   const handleTop = foregroundTop + foregroundHeight + handleGap;
   const handleLeft = foregroundLeft + 6;
   const handleWidth = Math.min(520, storyWidth - handleLeft - 48);
+  const shadowOffsetX = 0;
+  const shadowOffsetY = 16;
+  const shadowPadding = 28;
+  const roundedForegroundBuffer = await sharp(foregroundBuffer)
+    .composite([
+      {
+        input: Buffer.from(`
+          <svg width="${foregroundWidth}" height="${foregroundHeight}" xmlns="http://www.w3.org/2000/svg">
+            <rect
+              x="0"
+              y="0"
+              width="${foregroundWidth}"
+              height="${foregroundHeight}"
+              rx="${postBorderRadius}"
+              ry="${postBorderRadius}"
+              fill="#ffffff"
+            />
+          </svg>
+        `),
+        blend: 'dest-in',
+      },
+    ])
+    .png()
+    .toBuffer();
+  const shadowBuffer = await sharp({
+    create: {
+      width: foregroundWidth + shadowPadding * 2,
+      height: foregroundHeight + shadowPadding * 2,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
+    .composite([
+      {
+        input: Buffer.from(`
+          <svg width="${foregroundWidth}" height="${foregroundHeight}" xmlns="http://www.w3.org/2000/svg">
+            <rect
+              x="0"
+              y="0"
+              width="${foregroundWidth}"
+              height="${foregroundHeight}"
+              rx="${postBorderRadius}"
+              ry="${postBorderRadius}"
+              fill="rgba(0, 0, 0, 0.22)"
+            />
+          </svg>
+        `),
+        left: shadowPadding + shadowOffsetX,
+        top: shadowPadding + shadowOffsetY,
+      },
+    ])
+    .blur(18)
+    .png()
+    .toBuffer();
   const handleSvg = Buffer.from(`
     <svg width="${handleWidth}" height="64" viewBox="0 0 ${handleWidth} 64" xmlns="http://www.w3.org/2000/svg">
       <text
@@ -85,7 +138,12 @@ async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, story
         left: 0,
       },
       {
-        input: foregroundBuffer,
+        input: shadowBuffer,
+        left: foregroundLeft - shadowPadding,
+        top: foregroundTop - shadowPadding,
+      },
+      {
+        input: roundedForegroundBuffer,
         left: foregroundLeft,
         top: foregroundTop,
       },
