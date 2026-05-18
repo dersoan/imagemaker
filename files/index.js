@@ -23,6 +23,8 @@ app.get('/healthz', (req, res) => {
 async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, storyHeight = 1920) {
   const storyHandle = '@seucasorio.ofc';
   const handleGap = 28;
+  const postMaxWidth = Math.round(storyWidth * 0.86);
+  const postMaxHeight = Math.round(storyHeight * 0.76);
 
   const backgroundBuffer = await sharp(postPath)
     .resize(storyWidth, storyHeight, {
@@ -38,7 +40,7 @@ async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, story
     .toBuffer();
 
   const foregroundBuffer = await sharp(postPath)
-    .resize(storyWidth, storyHeight, {
+    .resize(postMaxWidth, postMaxHeight, {
       fit: 'inside',
       withoutEnlargement: true,
     })
@@ -51,7 +53,7 @@ async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, story
   const foregroundWidth = foregroundMetadata.width || storyWidth;
   const foregroundHeight = foregroundMetadata.height || storyHeight;
   const foregroundLeft = Math.round((storyWidth - foregroundWidth) / 2);
-  const foregroundTop = Math.round((storyHeight - foregroundHeight) / 2) - 40;
+  const foregroundTop = Math.round((storyHeight - foregroundHeight) / 2) - 90;
   const handleTop = foregroundTop + foregroundHeight + handleGap;
   const handleLeft = foregroundLeft + 6;
   const handleWidth = Math.min(520, storyWidth - handleLeft - 48);
