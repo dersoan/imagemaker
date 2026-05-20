@@ -9,6 +9,7 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 
 const IMAGES_DIR = path.join(__dirname, 'public', 'images');
+const APP_VERSION = process.env.APP_VERSION || '2026-05-20-story-text-v3';
 
 if (!fs.existsSync(IMAGES_DIR)) {
   fs.mkdirSync(IMAGES_DIR, { recursive: true });
@@ -17,8 +18,32 @@ if (!fs.existsSync(IMAGES_DIR)) {
 app.use('/images', express.static(IMAGES_DIR));
 
 app.get('/healthz', (req, res) => {
-  res.json({ status: 'ok' });
+  res.json({
+    status: 'ok',
+    version: APP_VERSION,
+  });
 });
+
+function resolveStoryText(body = {}) {
+  const candidates = [
+    body.story_text,
+    body.storyText,
+    body.story_message,
+    body.storyMessage,
+    body.texto_story,
+    body.textoStory,
+    body.texto,
+    body.text,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  return '';
+}
 
 function escapeXml(value = '') {
   return String(value)
@@ -333,8 +358,28 @@ app.post('/generate', async (req, res) => {
     generate_story = true,
     story_width = 1080,
     story_height = 1920,
-    story_text = '',
   } = req.body;
+  const storyText = resolveStoryText(req.body);
+
+  console.log(
+    JSON.stringify({
+      event: 'generate_request',
+      version: APP_VERSION,
+      generate_story,
+      story_text_received: storyText,
+      story_text_length: storyText.length,
+      body_story_fields: {
+        story_text: req.body.story_text || null,
+        storyText: req.body.storyText || null,
+        story_message: req.body.story_message || null,
+        storyMessage: req.body.storyMessage || null,
+        texto_story: req.body.texto_story || null,
+        textoStory: req.body.textoStory || null,
+        texto: req.body.texto || null,
+        text: req.body.text || null,
+      },
+    })
+  );
 
   if (!html) {
     return res.status(400).json({
@@ -421,13 +466,14 @@ app.post('/generate', async (req, res) => {
         storyFilepath,
         Number(story_width),
         Number(story_height),
-        story_text
+        storyText
       );
 
       storyUrl = `${baseUrl}/images/${storyFilename}`;
     }
 
     return res.json({
+      version: APP_VERSION,
       id: imageId,
       post: {
         url: postUrl,
@@ -441,7 +487,7 @@ app.post('/generate', async (req, res) => {
             width: Number(story_width),
             height: Number(story_height),
             format: 'story',
-            text: story_text || null,
+            text: storyText || null,
           }
         : null,
     });
