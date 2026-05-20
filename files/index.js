@@ -10,6 +10,8 @@ app.use(express.json({ limit: '10mb' }));
 
 const IMAGES_DIR = path.join(__dirname, 'public', 'images');
 const APP_VERSION = process.env.APP_VERSION || '2026-05-20-story-text-v3';
+const DEFAULT_STORY_TEXT =
+  process.env.DEFAULT_STORY_TEXT || 'Para ler a noticia digite news na DM que enviaremos para voce';
 
 if (!fs.existsSync(IMAGES_DIR)) {
   fs.mkdirSync(IMAGES_DIR, { recursive: true });
@@ -42,7 +44,7 @@ function resolveStoryText(body = {}) {
     }
   }
 
-  return '';
+  return DEFAULT_STORY_TEXT;
 }
 
 function escapeXml(value = '') {
