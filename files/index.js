@@ -20,7 +20,76 @@ app.get('/healthz', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, storyHeight = 1920) {
+function escapeXml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function wrapStoryText(text, maxCharsPerLine = 28, maxLines = 3) {
+  const normalizedText = String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!normalizedText) {
+    return [];
+  }
+
+  const words = normalizedText.split(' ');
+  const lines = [];
+  let currentLine = '';
+  let wasTruncated = false;
+
+  for (const word of words) {
+    const candidateLine = currentLine ? `${currentLine} ${word}` : word;
+
+    if (candidateLine.length <= maxCharsPerLine) {
+      currentLine = candidateLine;
+      continue;
+    }
+
+    if (currentLine && lines.length < maxLines - 1) {
+      lines.push(currentLine);
+      currentLine = word;
+      continue;
+    }
+
+    const sourceLine = currentLine || word;
+    const trimmedLine = sourceLine.length > maxCharsPerLine
+      ? sourceLine.slice(0, Math.max(0, maxCharsPerLine - 3)).trimEnd()
+      : sourceLine;
+
+    lines.push(trimmedLine);
+    wasTruncated = true;
+    currentLine = '';
+    break;
+  }
+
+  if (currentLine && lines.length < maxLines) {
+    lines.push(currentLine);
+  }
+
+  if (wasTruncated && lines.length) {
+    const lastIndex = lines.length - 1;
+    if (!lines[lastIndex].endsWith('...')) {
+      const safeLine = lines[lastIndex].slice(0, Math.max(0, maxCharsPerLine - 3)).trimEnd();
+      lines[lastIndex] = `${safeLine}...`;
+    }
+  }
+
+  return lines;
+}
+
+async function createStoryFromPost(
+  postPath,
+  storyPath,
+  storyWidth = 1080,
+  storyHeight = 1920,
+  storyText = ''
+) {
   const storyHandle = '@seucasorio.ofc';
   const handleGap = 28;
   const postMaxWidth = Math.round(storyWidth * 0.8);
@@ -56,9 +125,11 @@ async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, story
   const handleTop = foregroundTop + foregroundHeight + handleGap;
   const handleLeft = foregroundLeft + 6;
   const handleWidth = Math.min(520, storyWidth - handleLeft - 48);
+  const storyTextLines = wrapStoryText(storyText, 30, 3);
   const shadowOffsetX = 0;
   const shadowOffsetY = 16;
   const shadowPadding = 28;
+
   const roundedForegroundBuffer = await sharp(foregroundBuffer)
     .composite([
       {
@@ -80,6 +151,7 @@ async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, story
     ])
     .png()
     .toBuffer();
+
   const shadowBuffer = await sharp({
     create: {
       width: foregroundWidth + shadowPadding * 2,
@@ -110,6 +182,7 @@ async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, story
     .blur(18)
     .png()
     .toBuffer();
+
   const handleSvg = Buffer.from(`
     <svg width="${handleWidth}" height="64" viewBox="0 0 ${handleWidth} 64" xmlns="http://www.w3.org/2000/svg">
       <text
@@ -122,6 +195,47 @@ async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, story
       >${storyHandle}</text>
     </svg>
   `);
+
+  const storyTextFontSize = 28;
+  const storyTextLineHeight = 38;
+  const storyTextPaddingY = 18;
+  const storyTextBoxWidth = Math.min(760, storyWidth - 160);
+  const storyTextBoxHeight = storyTextLines.length
+    ? storyTextPaddingY * 2 + storyTextLines.length * storyTextLineHeight
+    : 0;
+  const storyTextBoxLeft = Math.round((storyWidth - storyTextBoxWidth) / 2);
+  const preferredStoryTextBoxTop = handleTop + 88;
+  const maxStoryTextBoxTop = storyHeight - storyTextBoxHeight - 80;
+  const storyTextBoxTop = Math.max(0, Math.min(preferredStoryTextBoxTop, maxStoryTextBoxTop));
+  const storyTextSvg = storyTextLines.length
+    ? Buffer.from(`
+      <svg width="${storyTextBoxWidth}" height="${storyTextBoxHeight}" viewBox="0 0 ${storyTextBoxWidth} ${storyTextBoxHeight}" xmlns="http://www.w3.org/2000/svg">
+        <rect
+          x="0"
+          y="0"
+          width="${storyTextBoxWidth}"
+          height="${storyTextBoxHeight}"
+          rx="12"
+          ry="12"
+          fill="rgba(0, 0, 0, 0.86)"
+        />
+        <text
+          x="${storyTextBoxWidth / 2}"
+          y="${storyTextPaddingY + storyTextFontSize}"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="${storyTextFontSize}"
+          font-weight="700"
+          text-anchor="middle"
+          fill="#ffffff"
+        >${storyTextLines
+          .map(
+            (line, index) =>
+              `<tspan x="${storyTextBoxWidth / 2}" dy="${index === 0 ? 0 : storyTextLineHeight}">${escapeXml(line)}</tspan>`
+          )
+          .join('')}</text>
+      </svg>
+    `)
+    : null;
 
   await sharp({
     create: {
@@ -152,6 +266,15 @@ async function createStoryFromPost(postPath, storyPath, storyWidth = 1080, story
         left: handleLeft,
         top: handleTop,
       },
+      ...(storyTextSvg
+        ? [
+            {
+              input: storyTextSvg,
+              left: storyTextBoxLeft,
+              top: storyTextBoxTop,
+            },
+          ]
+        : []),
     ])
     .jpeg({
       quality: 92,
@@ -210,6 +333,7 @@ app.post('/generate', async (req, res) => {
     generate_story = true,
     story_width = 1080,
     story_height = 1920,
+    story_text = '',
   } = req.body;
 
   if (!html) {
@@ -296,7 +420,8 @@ app.post('/generate', async (req, res) => {
         postFilepath,
         storyFilepath,
         Number(story_width),
-        Number(story_height)
+        Number(story_height),
+        story_text
       );
 
       storyUrl = `${baseUrl}/images/${storyFilename}`;
@@ -316,6 +441,7 @@ app.post('/generate', async (req, res) => {
             width: Number(story_width),
             height: Number(story_height),
             format: 'story',
+            text: story_text || null,
           }
         : null,
     });
