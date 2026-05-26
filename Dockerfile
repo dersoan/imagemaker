@@ -18,6 +18,7 @@ COPY files/package.json .
 RUN npm install --production
 
 COPY files/index.js .
+COPY files/templates/ ./templates/
 
 EXPOSE 3000
 
