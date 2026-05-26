@@ -19,6 +19,7 @@ RUN npm install --production
 
 COPY files/index.js .
 COPY files/templates/ ./templates/
+COPY files/public/ ./public/
 
 EXPOSE 3000
 

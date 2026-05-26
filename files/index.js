@@ -630,9 +630,11 @@ function buildSlideHtml(slide, total) {
   }
 
   if (tipo === 'cta') {
+    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
     return templateCache['slide-cta']
-      .replace(/\{\{TITULO\}\}/g, escapeXml(titulo))
-      .replace(/\{\{TEXTO\}\}/g, escapeXml(texto));
+      .replace(/\{\{TITULO\}\}/g,   escapeXml(titulo))
+      .replace(/\{\{TEXTO\}\}/g,    escapeXml(texto))
+      .replace(/\{\{BASE_URL\}\}/g, baseUrl);
   }
 
   throw new Error(`tipo de slide desconhecido: ${tipo}`);
