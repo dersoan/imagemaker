@@ -508,6 +508,205 @@ app.post('/generate', async (req, res) => {
   }
 });
 
+// ============================================================
+// CAROUSEL ENDPOINT
+// ============================================================
+
+// --- output directory (served at /output) ---
+const OUTPUT_DIR = path.join(__dirname, 'output');
+if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+app.use('/output', express.static(OUTPUT_DIR));
+
+// --- singleton browser for carousel ---
+let carouselBrowser = null;
+
+async function getCarouselBrowser() {
+  if (carouselBrowser && carouselBrowser.isConnected()) return carouselBrowser;
+  carouselBrowser = await puppeteer.launch({
+    headless: 'new',
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--no-zygote',
+      '--single-process',
+    ],
+  });
+  carouselBrowser.on('disconnected', () => { carouselBrowser = null; });
+  return carouselBrowser;
+}
+
+// --- template cache (loaded once at boot) ---
+const TEMPLATES_DIR = path.join(__dirname, 'templates', 'carousel');
+const templateCache = {};
+
+function loadTemplates() {
+  const names = ['slide-capa', 'slide-conteudo', 'slide-resumo', 'slide-cta'];
+  for (const name of names) {
+    templateCache[name] = fs.readFileSync(path.join(TEMPLATES_DIR, `${name}.html`), 'utf8');
+  }
+  console.log(JSON.stringify({ event: 'carousel_templates_loaded', templates: Object.keys(templateCache) }));
+}
+
+// --- semaphore: max 3 concurrent Puppeteer pages ---
+function createSemaphore(limit) {
+  let active = 0;
+  const queue = [];
+  function release() {
+    active--;
+    if (queue.length) queue.shift()();
+  }
+  return async function acquire() {
+    if (active < limit) { active++; return release; }
+    return new Promise(resolve => queue.push(() => { active++; resolve(release); }));
+  };
+}
+const carouselSemaphore = createSemaphore(3);
+
+// --- render a single slide HTML → PNG buffer ---
+async function renderSlide(htmlContent) {
+  const release = await carouselSemaphore();
+  const browser = await getCarouselBrowser();
+  const page = await browser.newPage();
+  try {
+    await page.setViewport({ width: 1080, height: 1440, deviceScaleFactor: 1 });
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout: 30000 });
+    await page.evaluate(async () => {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    });
+    return await page.screenshot({
+      type: 'png',
+      clip: { x: 0, y: 0, width: 1080, height: 1440 },
+    });
+  } finally {
+    await page.close().catch(() => {});
+    release();
+  }
+}
+
+// --- fill template placeholders with escaped slide data ---
+function buildSlideHtml(slide, total) {
+  const { numero, tipo, titulo, texto } = slide;
+  const numLabel = `${numero}/${total}`;
+
+  if (tipo === 'capa') {
+    return templateCache['slide-capa']
+      .replace(/\{\{TITULO\}\}/g, escapeXml(titulo))
+      .replace(/\{\{TEXTO\}\}/g, escapeXml(texto))
+      .replace(/\{\{NUMERO\}\}/g, escapeXml(numLabel));
+  }
+
+  if (tipo === 'conteudo') {
+    // even slide numbers (2, 4) → dark; odd (3, 5) → cream
+    const classeBg = numero % 2 === 0 ? 'dark' : 'cream';
+
+    const etiquetaMap = {
+      'Tendência':  'label--tendencia',
+      'Mercado':    'label--mercado',
+      'Inspiração': 'label--inspiracao',
+    };
+    const etiqueta    = slide.etiqueta || '';
+    const etiquetaCor = etiquetaMap[etiqueta] || 'label--tendencia';
+
+    return templateCache['slide-conteudo']
+      .replace(/\{\{TITULO\}\}/g,      escapeXml(titulo))
+      .replace(/\{\{TEXTO\}\}/g,       escapeXml(texto))
+      .replace(/\{\{NUMERO\}\}/g,      escapeXml(numLabel))
+      .replace(/\{\{CLASSE_BG\}\}/g,   classeBg)
+      .replace(/\{\{ETIQUETA\}\}/g,    escapeXml(etiqueta))
+      .replace(/\{\{ETIQUETA_COR\}\}/g, etiquetaCor);
+  }
+
+  if (tipo === 'resumo') {
+    const bullets = String(texto || '')
+      .split('\n')
+      .map(l => l.trim())
+      .filter(Boolean)
+      .map(l => `<li class="item"><p class="item__body">${escapeXml(l)}</p></li>`)
+      .join('\n');
+    return templateCache['slide-resumo'].replace(/\{\{BULLETS\}\}/g, bullets);
+  }
+
+  if (tipo === 'cta') {
+    return templateCache['slide-cta']
+      .replace(/\{\{TITULO\}\}/g, escapeXml(titulo))
+      .replace(/\{\{TEXTO\}\}/g, escapeXml(texto));
+  }
+
+  throw new Error(`tipo de slide desconhecido: ${tipo}`);
+}
+
+app.post('/carousel', async (req, res) => {
+  const { artigo_id, slides } = req.body;
+
+  if (!artigo_id || typeof artigo_id !== 'string') {
+    return res.status(400).json({ error: 'artigo_id é obrigatório' });
+  }
+  if (!Array.isArray(slides) || slides.length !== 7) {
+    return res.status(400).json({ error: '7 slides são obrigatórios' });
+  }
+
+  // Sanitize artigo_id to prevent path traversal
+  const safeId = artigo_id.replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!safeId) {
+    return res.status(400).json({ error: 'artigo_id inválido' });
+  }
+
+  const outDir = path.join(OUTPUT_DIR, safeId);
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
+
+  console.log(JSON.stringify({ event: 'carousel_request', artigo_id: safeId, slides: slides.length }));
+
+  try {
+    const images = await Promise.all(
+      slides.map(async (slide) => {
+        let html;
+        try {
+          html = buildSlideHtml(slide, slides.length);
+        } catch (buildErr) {
+          const e = new Error(buildErr.message);
+          e.slideNum = slide.numero;
+          throw e;
+        }
+
+        let screenshot;
+        try {
+          screenshot = await renderSlide(html);
+        } catch (renderErr) {
+          const e = new Error(renderErr.message);
+          e.slideNum = slide.numero;
+          throw e;
+        }
+
+        const filename = `slide-${slide.numero}.png`;
+        fs.writeFileSync(path.join(outDir, filename), screenshot);
+
+        return {
+          numero: slide.numero,
+          tipo: slide.tipo,
+          url: `${baseUrl}/output/${safeId}/${filename}`,
+        };
+      })
+    );
+
+    console.log(JSON.stringify({ event: 'carousel_done', artigo_id: safeId }));
+    return res.json({ artigo_id: safeId, images });
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'carousel_error', artigo_id: safeId, slide: err.slideNum, message: err.message }));
+    return res.status(500).json({ error: `slide ${err.slideNum} falhou`, detail: err.message });
+  }
+});
+
+// ============================================================
+// BOOT
+// ============================================================
+
+loadTemplates();
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {

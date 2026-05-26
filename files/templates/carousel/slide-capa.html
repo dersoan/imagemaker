@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Fraunces:ital,opsz,wght@1,9..144,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* =========================================================
+   BRUTALIST 02 – Post para Instagram (1080 x 1440)
+   ========================================================= */
+
+:root{
+  --bg:        #0d0d0d;
+  --ink:       #f4f1ea;
+  --ink-mute:  #bcb6a7;
+  --accent:    #f0b829;
+  --dash:      #3a352c;
+
+  --img-base:  #4a4538;
+  --img-line:  #3d382c;
+  --img-ink:   #9a937f;
+
+  --pad-x:     80px;
+  --pad-bot-y: 64px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body{
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- POSTER ---------- */
+.poster{
+  width: 1080px;
+  height: 1440px;
+  background: var(--bg);
+  color: var(--ink);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ---------- IMAGE BAND ---------- */
+.poster__img{
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  border-bottom: 8px solid var(--accent);
+  background: var(--img-base);
+}
+.poster__img img{
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.placeholder{
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(135deg, rgba(0,0,0,.35), rgba(0,0,0,0) 40%),
+    repeating-linear-gradient(135deg,
+      var(--img-base) 0 30px,
+      var(--img-line) 30px 60px);
+  display: grid;
+  place-items: center;
+  color: var(--img-ink);
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-size: 20px;
+  letter-spacing: .22em;
+}
+
+/* ---------- ROTATED STAMP BADGE ---------- */
+.stamp{
+  position: absolute;
+  top: 56px;
+  right: 56px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  display: grid;
+  place-items: center;
+  transform: rotate(-12deg);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 9px var(--accent);
+  text-align: center;
+  z-index: 4;
+}
+.stamp__big{
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 64px;
+  line-height: 1;
+  letter-spacing: -.03em;
+}
+.stamp__sm{
+  display: block;
+  font-family: "DM Mono", monospace;
+  font-size: 13px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+/* ---------- TICKER STRIP ---------- */
+.ticker{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--accent);
+  color: var(--bg);
+  padding: 16px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: "DM Mono", monospace;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.ticker::before{
+  content: "\25C6 DESTINOS 2026   \25C6   OR\00C7AMENTO ACESS\00CDVEL   \25C6   GUIA COMPLETO   \25C6   VEJA MAIS   \25C6   DESTINOS 2026   \25C6   OR\00C7AMENTO ACESS\00CDVEL   \25C6   GUIA COMPLETO   \25C6";
+  padding-left: 48px;
+  display: inline-block;
+}
+
+/* ---------- BOTTOM ---------- */
+.poster__bottom{
+  background: var(--bg);
+  padding: var(--pad-bot-y) var(--pad-x);
+  color: var(--ink);
+  position: relative;
+}
+
+.eyebrow{
+  font-family: "DM Mono", monospace;
+  font-size: 18px;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.eyebrow::before{
+  content: "";
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.headline{
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 104px;
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  margin: 0 0 32px;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--ink);
+}
+.headline .mark{
+  background: var(--accent);
+  color: var(--bg);
+  padding: 0 .15em;
+  display: inline-block;
+  transform: skew(-6deg);
+}
+.headline .ital{
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: -.03em;
+}
+
+.lede{
+  font-size: 26px;
+  line-height: 1.4;
+  color: var(--ink-mute);
+  max-width: 80%;
+  margin: 0;
+}
+
+.meta{
+  margin-top: 48px;
+  padding-top: 26px;
+  border-top: 1px dashed var(--dash);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: "DM Mono", monospace;
+  font-size: 18px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.meta .arrow{
+  color: var(--accent);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 30px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+</style>
+</head>
+<body>
+
+  <article class="poster">
+
+    <figure class="poster__img">
+      <div class="placeholder">[ FOTO ]</div>
+
+      <div class="stamp" aria-hidden="true">
+        <div>
+          <div class="stamp__big">{{NUMERO}}</div>
+          <span class="stamp__sm">slide</span>
+        </div>
+      </div>
+
+      <div class="ticker" aria-hidden="true"><span></span></div>
+    </figure>
+
+    <section class="poster__bottom">
+      <div class="eyebrow">Guia &middot; Destinos &middot; 04 minutos</div>
+
+      <h1 class="headline">{{TITULO}}</h1>
+
+      <p class="lede">{{TEXTO}}</p>
+
+      <div class="meta">
+        <span>seucasorio.com.br / noticias</span>
+        <span class="arrow">veja mais &rarr;</span>
+      </div>
+    </section>
+
+  </article>
+
+</body>
+</html>

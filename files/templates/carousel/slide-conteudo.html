@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+/* =========================================================
+   POST 02/03 combinado – dark (slides pares) / cream (slides ímpares)
+   ========================================================= */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body{
+  margin: 0;
+  padding: 0;
+  font-family: "Manrope", "Space Grotesk", system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- POSTER base ---------- */
+.poster{
+  width: 1080px;
+  height: 1440px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 72px 80px 64px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* cream vertical bar on right edge */
+.poster::after{
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 100%;
+  z-index: 5;
+}
+
+/* ---------- VARIANTE DARK (post-02) ---------- */
+.poster.dark{
+  background: #0d0d0d;
+  color: #f4f1ea;
+}
+.poster.dark::after{
+  background: #f4f1ea;
+}
+.poster.dark .eyebrow{
+  color: #f0b829;
+}
+.poster.dark .eyebrow__row::before{
+  background: #f0b829;
+}
+.poster.dark .eyebrow__dash{
+  background: #f0b829;
+}
+.poster.dark .headline{
+  color: #f4f1ea;
+}
+.poster.dark .pill{
+  background: #f0b829;
+  color: #0d0d0d;
+}
+.poster.dark .item__title{
+  color: #f4f1ea;
+}
+.poster.dark .item__body{
+  color: #bcb6a7;
+}
+.poster.dark .foot{
+  color: #bcb6a7;
+  border-top: 1px dashed #f0b829;
+  margin-right: 36px;
+}
+.poster.dark .foot__right{
+  color: #f0b829;
+}
+
+/* ---------- VARIANTE CREAM (post-03) ---------- */
+.poster.cream{
+  background: #f4f1ea;
+  color: #0d0d0d;
+}
+.poster.cream::after{
+  background: #f0b829;
+}
+.poster.cream .eyebrow{
+  color: #c79620;
+}
+.poster.cream .eyebrow__row::before{
+  background: #f0b829;
+}
+.poster.cream .eyebrow__dash{
+  background: #f0b829;
+}
+.poster.cream .headline{
+  color: #0d0d0d;
+}
+.poster.cream .pill{
+  background: #f0b829;
+  color: #0d0d0d;
+}
+.poster.cream .item__title{
+  color: #0d0d0d;
+}
+.poster.cream .item__body{
+  color: #4a4a40;
+}
+.poster.cream .foot{
+  color: #6a6a5e;
+  border-top: 1px dashed #f0b829;
+  margin-right: 56px;
+}
+.poster.cream .foot__right{
+  color: #c79620;
+}
+
+/* ---------- ETIQUETA (label colorido no eyebrow) ---------- */
+.poster.dark .label--tendencia  { color: #f0b829; }
+.poster.dark .label--mercado    { color: #e07b2a; }
+.poster.dark .label--inspiracao { color: #f4f1ea; }
+
+.poster.cream .label--tendencia  { color: #c79620; }
+.poster.cream .label--mercado    { color: #b85a18; }
+.poster.cream .label--inspiracao { color: #6a5a3a; }
+
+/* ---------- EYEBROW ---------- */
+.eyebrow{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  font-family: "Manrope", "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+.eyebrow__row{
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.eyebrow__row::before{
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.eyebrow__dash{
+  width: 28px;
+  height: 2px;
+}
+
+/* ---------- MAIN ---------- */
+.main{
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.headline{
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 110px;
+  line-height: .96;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.pill{
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 64px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  padding: 14px 36px;
+  display: inline-block;
+  align-self: flex-start;
+}
+
+.item{
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+.item__title{
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 36px;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-transform: uppercase;
+}
+.item__body{
+  font-family: "Manrope", "Space Grotesk", sans-serif;
+  font-weight: 500;
+  font-size: 26px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ---------- FOOTER ---------- */
+.foot{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: "Manrope", "Space Grotesk", sans-serif;
+  font-size: 22px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding-top: 28px;
+}
+.foot__right{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+  font-size: 28px;
+}
+.foot__arr{
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 36px;
+}
+</style>
+</head>
+<body>
+
+  <article class="poster {{CLASSE_BG}}">
+
+    <header class="eyebrow">
+      <span class="eyebrow__row">
+        <span class="label {{ETIQUETA_COR}}">{{ETIQUETA}}</span>
+        &middot; {{NUMERO}}
+      </span>
+      <span class="eyebrow__dash"></span>
+    </header>
+
+    <section class="main">
+      <h1 class="headline">{{TITULO}}</h1>
+
+      <span class="pill">em alta</span>
+
+      <div class="item">
+        <h2 class="item__title">{{TITULO}}</h2>
+        <p class="item__body">{{TEXTO}}</p>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>seucasorio.com.br / not&iacute;cias</span>
+      <span class="foot__right">
+        arraste <span class="foot__arr">&rarr;</span>
+      </span>
+    </footer>
+
+  </article>
+
+</body>
+</html>
