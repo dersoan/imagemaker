@@ -586,9 +586,16 @@ async function renderSlide(htmlContent) {
   }
 }
 
+const ETIQUETA_VALUES = new Set(['Tendência', 'Mercado', 'Inspiração']);
+
 // --- fill template placeholders with escaped slide data ---
 function buildSlideHtml(slide, total) {
-  const { numero, tipo, titulo, texto } = slide;
+  // normalize: if tipo is actually an etiqueta value, treat slide as 'conteudo'
+  const tipoRaw = slide.tipo;
+  const tipo = ETIQUETA_VALUES.has(tipoRaw) ? 'conteudo' : tipoRaw;
+  const etiquetaResolved = ETIQUETA_VALUES.has(tipoRaw) ? tipoRaw : (slide.etiqueta || '');
+
+  const { numero, titulo, texto } = slide;
   const numLabel = `${numero}/${total}`;
 
   if (tipo === 'capa') {
@@ -613,7 +620,7 @@ function buildSlideHtml(slide, total) {
       'Mercado':    'label--mercado',
       'Inspiração': 'label--inspiracao',
     };
-    const etiqueta    = slide.etiqueta || '';
+    const etiqueta    = etiquetaResolved;
     const etiquetaCor = etiquetaMap[etiqueta] || 'label--tendencia';
 
     return templateCache['slide-conteudo']
