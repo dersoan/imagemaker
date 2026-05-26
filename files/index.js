@@ -592,10 +592,16 @@ function buildSlideHtml(slide, total) {
   const numLabel = `${numero}/${total}`;
 
   if (tipo === 'capa') {
+    const imagemUrl = slide.imagem_url || slide.imagemUrl || slide.image_url || '';
+    const imagemHtml = imagemUrl
+      ? `<img src="${escapeXml(imagemUrl)}" alt="" />`
+      : `<div class="placeholder">[ FOTO ]</div>`;
+
     return templateCache['slide-capa']
       .replace(/\{\{TITULO\}\}/g, escapeXml(titulo))
       .replace(/\{\{TEXTO\}\}/g, escapeXml(texto))
-      .replace(/\{\{NUMERO\}\}/g, escapeXml(numLabel));
+      .replace(/\{\{NUMERO\}\}/g, escapeXml(numLabel))
+      .replace(/\{\{IMAGEM_HTML\}\}/g, imagemHtml);
   }
 
   if (tipo === 'conteudo') {
