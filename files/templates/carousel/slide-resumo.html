@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@500;700&display=swap" rel="stylesheet" />
 <style>
 /* =========================================================
-   POST 06 – Tendências (lista de 3) – black bg
+   POST 06 – Em Resumo – black bg
    ========================================================= */
 
 :root{
@@ -32,13 +32,13 @@ html, body{
   background: var(--bg);
   color: var(--ink);
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  gap: 32px;
-  padding: 72px 80px 64px;
+  grid-template-rows: auto auto auto 1fr auto;
+  padding: 120px 80px 64px;
   overflow: hidden;
   position: relative;
 }
 
+/* ---------- EYEBROW ---------- */
 .eyebrow{
   display: flex;
   align-items: center;
@@ -49,6 +49,7 @@ html, body{
   letter-spacing: .28em;
   text-transform: uppercase;
   color: var(--yellow);
+  margin-bottom: 120px;
 }
 .eyebrow::before{
   content: "";
@@ -56,24 +57,26 @@ html, body{
   height: 14px;
   border-radius: 50%;
   background: var(--yellow);
+  flex-shrink: 0;
 }
 .eyebrow .sep{ color: var(--yellow); }
 
+/* ---------- HEADING ---------- */
 .head-wrap{
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  margin-bottom: 56px;
 }
 .headline{
   font-family: "Space Grotesk", sans-serif;
   font-weight: 700;
-  font-size: 88px;
-  line-height: .98;
-  letter-spacing: -0.025em;
+  font-size: 104px;
+  line-height: .92;
+  letter-spacing: -0.03em;
   color: var(--ink);
-  margin: 0 0 22px;
+  margin: 0 0 28px;
   text-transform: uppercase;
-  text-wrap: balance;
 }
 .pill{
   background: var(--yellow);
@@ -81,57 +84,44 @@ html, body{
   font-family: "Fraunces", serif;
   font-style: italic;
   font-weight: 500;
-  font-size: 60px;
+  font-size: 56px;
   line-height: 1;
   letter-spacing: -0.02em;
   padding: 10px 36px;
   display: inline-block;
 }
 
-/* list */
+/* ---------- LIST ---------- */
 .list{
   list-style: none;
   margin: 0;
   padding: 0;
+  border-top: 2px dashed rgba(188,182,167,.35);
+  border-bottom: 2px dashed rgba(188,182,167,.35);
   display: flex;
   flex-direction: column;
-  align-self: stretch;
-  justify-content: space-evenly;
+  gap: 0;
+  align-self: start;
 }
+
+.list li,
 .item{
-  padding: 22px 0;
-  border-bottom: 2px dashed var(--yellow);
+  padding: 26px 0 26px 4px;
+  border-top: none;
+  border-bottom: none;
 }
-.item:first-child{ border-top: 2px dashed var(--yellow); }
 
-/* suporte a <li class="item"> gerados pelo {{BULLETS}} */
-.list li{
-  padding: 22px 0;
-  border-bottom: 2px dashed var(--yellow);
-}
-.list li:first-child{ border-top: 2px dashed var(--yellow); }
-
-.item__title{
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 700;
-  font-size: 36px;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  margin: 0 0 12px;
-  text-transform: uppercase;
-}
-.item__body{
+.item__body,
+.list li p{
   font-family: "Manrope", sans-serif;
   font-weight: 500;
-  font-size: 26px;
+  font-size: 34px;
   line-height: 1.4;
-  color: var(--ink-mute);
+  color: var(--ink);
   margin: 0;
-  max-width: 80%;
 }
 
-/* footer */
+/* ---------- FOOTER ---------- */
 .foot{
   display: flex;
   justify-content: space-between;
@@ -176,6 +166,8 @@ html, body{
     <ul class="list">
       {{BULLETS}}
     </ul>
+
+    <div><!-- espaço vazio --></div>
 
     <footer class="foot">
       <span>seucasorio.com.br / not&iacute;cias</span>
