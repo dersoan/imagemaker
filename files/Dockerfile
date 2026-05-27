@@ -18,6 +18,11 @@ COPY package.json .
 RUN npm install --production
 
 COPY index.js .
+# Templates do carousel (obrigatório — loadTemplates() falha sem eles)
+COPY templates ./templates
+
+# Cria diretórios de saída para que o volume seja montável sobre eles
+RUN mkdir -p public/images output
 
 EXPOSE 3000
 
