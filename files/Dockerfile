@@ -21,7 +21,12 @@ COPY index.js .
 # Templates do carousel (obrigatório — loadTemplates() falha sem eles)
 COPY templates ./templates
 
+# Imagens fixas (noiva, fornecedores) — sempre presentes na imagem Docker
+COPY public/storage ./public/storage
+
 # Cria diretórios de saída para que o volume seja montável sobre eles
+# public/images → imagens geradas dinamicamente (pode ser volume)
+# output        → carrosséis gerados
 RUN mkdir -p public/images output
 
 EXPOSE 3000
