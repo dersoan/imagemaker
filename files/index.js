@@ -396,6 +396,7 @@ app.post('/generate', async (req, res) => {
   let browser;
 
   try {
+    const linuxArgs = process.platform !== 'win32' ? ['--no-zygote', '--single-process'] : [];
     browser = await puppeteer.launch({
       headless: 'new',
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
@@ -404,8 +405,7 @@ app.post('/generate', async (req, res) => {
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
-        '--no-zygote',
-        '--single-process',
+        ...linuxArgs,
       ],
     });
 
@@ -526,16 +526,17 @@ let carouselBrowser = null;
 
 async function getCarouselBrowser() {
   if (carouselBrowser && carouselBrowser.isConnected()) return carouselBrowser;
+  const linuxArgs = process.platform !== 'win32' ? ['--no-zygote', '--single-process'] : [];
   carouselBrowser = await puppeteer.launch({
     headless: 'new',
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+    protocolTimeout: 120000,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu',
-      '--no-zygote',
-      '--single-process',
+      ...linuxArgs,
     ],
   });
   carouselBrowser.on('disconnected', () => { carouselBrowser = null; });
@@ -584,11 +585,13 @@ async function renderSlide(htmlContent) {
   const browser = await getCarouselBrowser();
   const page = await browser.newPage();
   try {
+    page.setDefaultTimeout(60000);
+    page.setDefaultNavigationTimeout(60000);
     await page.setViewport({ width: 1080, height: 1440, deviceScaleFactor: 1 });
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout: 30000 });
+    await page.setContent(htmlContent, { waitUntil: 'networkidle2', timeout: 60000 });
     await page.evaluate(async () => {
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
-    });
+    }).catch(() => {});
     return await page.screenshot({
       type: 'png',
       clip: { x: 0, y: 0, width: 1080, height: 1440 },
@@ -608,7 +611,12 @@ function buildSerie2Html(slide, total) {
   const template = templateCache[cacheKey];
   if (!template) throw new Error(`template série 2 "${tipo}" não encontrado`);
 
-  const { titulo, texto, etiqueta, subtitulo } = slide;
+  // Defaults para o CTA (campos opcionais)
+  const ctaDefaults = tipo === 'cta' ? {
+    titulo: 'Encontre os melhores fornecedores para o seu casamento.',
+    texto:  'Acesse o guia mais completo de casamentos do Brasil.',
+  } : {};
+  const { titulo, texto, etiqueta, subtitulo } = { ...ctaDefaults, ...slide };
   const titulo2 = slide.titulo_2 || slide.titulo2 || '';
   const titulo3 = slide.titulo_3 || slide.titulo3 || '';
   const numLabel = `${slide.numero}/${total}`;

@@ -26,14 +26,8 @@ html,body{margin:0;padding:0;font-family:"Manrope","Space Grotesk",sans-serif;}
   background:var(--cream);padding:36px 80px;
   display:flex;align-items:center;justify-content:space-between;
 }
-.brand{
-  width:80px;height:80px;border-radius:12px;
-  background:var(--brown-2);color:var(--cream);
-  display:grid;place-items:center;flex:none;text-align:center;
-  font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:600;
-}
-.brand .seu{font-size:16px;line-height:1;display:block;}
-.brand .cas{font-size:28px;line-height:1;display:block;margin-top:1px;}
+.brand{width:125px;height:125px;flex:none;margin:0;padding:0;display:grid;place-items:center;}
+.brand img{width:125px;height:125px;object-fit:contain;display:block;}
 .kicker{
   font-family:"Manrope",sans-serif;font-weight:700;font-size:18px;
   letter-spacing:.28em;text-transform:uppercase;color:var(--brown-2);
@@ -84,9 +78,9 @@ html,body{margin:0;padding:0;font-family:"Manrope","Space Grotesk",sans-serif;}
 <body>
 <article class="poster">
   <header class="band-1">
-    <span class="brand" aria-label="seuCas&oacute;rio">
-      <span class="seu">seu</span><span class="cas">C.</span>
-    </span>
+    <figure class="brand">
+      <img src="{{BASE_URL}}/storage/LogoRedondo.png" alt="seuCas&oacute;rio" />
+    </figure>
     <span class="kicker">Detalhes &middot; {{NUMERO}}</span>
   </header>
   <section class="band-2">
