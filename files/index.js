@@ -725,7 +725,7 @@ app.post('/carousel', async (req, res) => {
 
   const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
 
-  console.log(JSON.stringify({ event: 'carousel_request', artigo_id: safeId, slides: slides.length }));
+  console.log(JSON.stringify({ event: 'carousel_request', artigo_id: safeId, serie, slides: slides.length }));
 
   try {
     const images = await Promise.all(
