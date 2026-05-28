@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+/* Serie 02 — Conteudo | Placeholders: {{TITULO}} {{ETIQUETA}} {{SUBTITULO}} {{TEXTO}} */
+:root{
+  --bg:#5c3416; --cream:#ece2cf; --tan:#d8c4a4; --tan-2:#c9a878;
+  --brown-3:#2e1709; --accent:#d8c4a4; --accent-dk:#c9a878; --ink-mute:#c9a878;
+}
+*,*::before,*::after{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);font-family:"Manrope","Space Grotesk",sans-serif;}
+.poster{
+  width:1080px;height:1440px;background:var(--bg);color:var(--cream);
+  display:grid;grid-template-rows:auto 1fr auto;
+  padding:72px 80px 64px;overflow:hidden;position:relative;
+}
+.poster::after{
+  content:"";position:absolute;top:0;right:0;
+  width:36px;height:100%;background:var(--cream);z-index:5;
+}
+.eyebrow{
+  display:flex;flex-direction:column;align-items:flex-start;gap:16px;
+  font-family:"Manrope",sans-serif;font-weight:700;font-size:22px;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--accent);
+}
+.eyebrow__row{display:flex;align-items:center;gap:22px;}
+.eyebrow__row::before{content:"";width:14px;height:14px;border-radius:50%;background:var(--accent);}
+.eyebrow__dash{width:28px;height:2px;background:var(--accent);}
+.main{align-self:center;display:flex;flex-direction:column;gap:28px;}
+.headline{
+  font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:104px;line-height:.96;letter-spacing:-0.025em;
+  color:var(--cream);text-transform:uppercase;margin:0;text-wrap:balance;max-width:90%;
+}
+.pill{
+  background:var(--cream);color:var(--brown-3);
+  font-family:"Fraunces",serif;font-style:italic;font-weight:500;
+  font-size:60px;line-height:1;letter-spacing:-0.02em;
+  padding:14px 36px;display:inline-block;align-self:flex-start;
+}
+.item{margin-top:24px;display:flex;flex-direction:column;gap:16px;max-width:760px;}
+.item__title{
+  font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:36px;line-height:1.05;letter-spacing:-0.01em;
+  color:var(--cream);margin:0;text-transform:uppercase;
+}
+.item__body{
+  font-family:"Manrope",sans-serif;font-weight:500;
+  font-size:26px;line-height:1.45;color:var(--ink-mute);margin:0;
+}
+.foot{
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:"Manrope",sans-serif;font-size:22px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute);
+  padding-top:28px;border-top:1px dashed var(--accent);margin-right:56px;
+}
+.foot__right{
+  display:flex;align-items:center;gap:14px;
+  text-transform:lowercase;letter-spacing:-0.01em;font-size:28px;color:var(--accent);
+}
+.foot__arr{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:36px;}
+</style>
+</head>
+<body>
+<article class="poster">
+  <header class="eyebrow">
+    <span class="eyebrow__row">Detalhes &middot; Casamento 2026 &middot; seuCas&oacute;rio</span>
+    <span class="eyebrow__dash"></span>
+  </header>
+  <section class="main">
+    <h1 class="headline">{{TITULO}}</h1>
+    <span class="pill">{{ETIQUETA}}</span>
+    <div class="item">
+      <h2 class="item__title">{{SUBTITULO}}</h2>
+      <p class="item__body">{{TEXTO}}</p>
+    </div>
+  </section>
+  <footer class="foot">
+    <span>seucasorio.com.br / detalhes</span>
+    <span class="foot__right">arraste <span class="foot__arr">&rarr;</span></span>
+  </footer>
+</article>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Manrope:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+/* Serie 02 — CTA Final | Placeholders: {{TITULO}} {{TEXTO}} {{BASE_URL}} */
+:root{
+  --bg:#2e1709; --bg-2:#5c3416;
+  --cream:#ece2cf; --tan:#d8c4a4; --tan-2:#c9a878;
+  --brown:#8a4f1f; --accent:#f0b829;
+  --ink:#f4f1ea; --ink-mute:#c9a878;
+}
+*,*::before,*::after{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);font-family:"Manrope","Space Grotesk",sans-serif;}
+.poster{
+  width:1080px;height:1440px;background:var(--bg);color:var(--ink);
+  display:grid;grid-template-rows:1fr 1fr auto;
+  overflow:hidden;position:relative;
+}
+.cta{display:grid;grid-template-columns:1fr 1fr;position:relative;overflow:hidden;}
+.cta+.cta{border-top:2px solid var(--accent);}
+.cta__text{
+  background:var(--bg);padding:56px 56px 56px 72px;
+  display:flex;flex-direction:column;justify-content:center;gap:18px;z-index:3;
+}
+.cta__lbl{
+  font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:36px;line-height:1;letter-spacing:-0.005em;
+  color:var(--accent);text-transform:uppercase;margin:0;
+}
+.cta__head{
+  font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:64px;line-height:1.0;letter-spacing:-0.02em;
+  color:var(--ink);text-transform:uppercase;margin:0;text-wrap:balance;
+}
+.cta__body{
+  font-family:"Manrope",sans-serif;font-weight:500;
+  font-size:24px;line-height:1.4;color:var(--ink-mute);margin:0 0 8px;max-width:95%;
+}
+.cta__btn{
+  background:var(--accent);color:var(--bg);
+  font-family:"Manrope",sans-serif;font-weight:700;font-size:22px;
+  letter-spacing:.14em;text-transform:uppercase;padding:22px 32px;
+  display:inline-flex;align-items:center;justify-content:space-between;
+  gap:32px;width:fit-content;min-width:380px;
+}
+.cta__arr{font-family:"Space Grotesk",sans-serif;font-size:30px;font-weight:700;letter-spacing:0;}
+.cta__photo{position:relative;background:var(--bg-2);overflow:hidden;margin:0;}
+.cta__photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.ph{
+  width:100%;height:100%;
+  background:
+    linear-gradient(135deg,rgba(0,0,0,.35),rgba(0,0,0,0) 50%),
+    repeating-linear-gradient(135deg,var(--tan-2) 0 30px,var(--brown) 30px 60px);
+  display:grid;place-items:center;
+}
+.ph::after{
+  content:attr(data-label);font-family:ui-monospace,monospace;
+  font-size:18px;letter-spacing:.24em;color:var(--cream);text-transform:uppercase;
+}
+.cta__photo--warm .ph{
+  background:
+    linear-gradient(135deg,rgba(0,0,0,.4),rgba(0,0,0,0) 50%),
+    radial-gradient(ellipse at 70% 40%,#e6a86a 0%,#b86a2a 35%,#5c3416 70%);
+}
+.strip{
+  background:var(--accent);color:var(--bg);padding:28px 56px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:"Manrope",sans-serif;font-weight:700;font-size:22px;
+  letter-spacing:.12em;text-transform:uppercase;
+}
+.strip__right{display:flex;align-items:center;gap:16px;}
+.strip__arr{font-family:"Space Grotesk",sans-serif;font-size:32px;font-weight:700;}
+</style>
+</head>
+<body>
+<article class="poster">
+  <div class="cta">
+    <div class="cta__text">
+      <h3 class="cta__lbl">Noiva,</h3>
+      <h2 class="cta__head">{{TITULO}}</h2>
+      <p class="cta__body">{{TEXTO}}</p>
+      <span class="cta__btn">
+        <span>Encontre seu lugar</span>
+        <span class="cta__arr">&rarr;</span>
+      </span>
+    </div>
+    <figure class="cta__photo">
+      <img src="{{BASE_URL}}/storage/nova.png" alt="" />
+    </figure>
+  </div>
+  <div class="cta">
+    <div class="cta__text">
+      <h3 class="cta__lbl">Fornecedor,</h3>
+      <h2 class="cta__head">Fa&ccedil;a parte dos melhores eventos.</h2>
+      <p class="cta__body">Divulgue seu trabalho, conecte-se com noivas e fa&ccedil;a parte do guia mais completo de casamentos.</p>
+      <span class="cta__btn">
+        <span>Cadastre seu servi&ccedil;o</span>
+        <span class="cta__arr">&rarr;</span>
+      </span>
+    </div>
+    <figure class="cta__photo cta__photo--warm">
+      <img src="{{BASE_URL}}/storage/fornecedores.jpg" alt="" />
+    </figure>
+  </div>
+  <footer class="strip">
+    <span>Os melhores lugares, fornecedores e tend&ecirc;ncias</span>
+    <span class="strip__right">seucasorio.com.br <span class="strip__arr">&rarr;</span></span>
+  </footer>
+</article>
+</body>
+</html>

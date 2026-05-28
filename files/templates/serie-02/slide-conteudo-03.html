@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,700&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Manrope:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+/* Serie 02 — Conteudo-03 (3 bandas) | Placeholders: {{NUMERO}} {{TITULO}} {{TITULO_2}} {{TITULO_3}} */
+:root{
+  --cream:#ece2cf; --tan:#d8c4a4; --tan-2:#c9a878;
+  --brown:#8a4f1f; --brown-2:#5c3416; --brown-3:#2e1709;
+}
+*,*::before,*::after{box-sizing:border-box;}
+html,body{margin:0;padding:0;font-family:"Manrope","Space Grotesk",sans-serif;}
+.poster{
+  width:1080px;height:1440px;
+  display:grid;grid-template-rows:150px 540px 1fr;
+  overflow:hidden;position:relative;background:var(--cream);
+}
+.poster::after{
+  content:"";position:absolute;top:0;right:0;
+  width:24px;height:100%;background:var(--brown-3);z-index:10;
+}
+.band-1{
+  background:var(--cream);padding:36px 80px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand{
+  width:80px;height:80px;border-radius:12px;
+  background:var(--brown-2);color:var(--cream);
+  display:grid;place-items:center;flex:none;text-align:center;
+  font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:600;
+}
+.brand .seu{font-size:16px;line-height:1;display:block;}
+.brand .cas{font-size:28px;line-height:1;display:block;margin-top:1px;}
+.kicker{
+  font-family:"Manrope",sans-serif;font-weight:700;font-size:18px;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--brown-2);
+  display:flex;align-items:center;gap:18px;
+}
+.kicker::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--brown-2);}
+.band-2{
+  background:var(--tan);padding:60px 88px 40px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.head-out{
+  font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:132px;line-height:.94;letter-spacing:-0.035em;margin:0 0 16px;
+  color:transparent;-webkit-text-stroke:3px var(--brown-3);
+}
+.head-ital{
+  font-family:"Fraunces",serif;font-style:italic;font-weight:500;
+  font-size:116px;line-height:.96;letter-spacing:-.035em;
+  color:var(--brown-2);margin:0;text-wrap:balance;
+}
+.band-3{
+  background:var(--brown);color:var(--cream);
+  padding:60px 88px 60px;display:grid;
+  grid-template-rows:1fr auto;gap:32px;position:relative;
+}
+.band-3::before{
+  content:"";position:absolute;top:0;left:0;right:0;
+  height:8px;background:var(--tan-2);
+}
+.head-solid{
+  font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:132px;line-height:.94;letter-spacing:-0.035em;
+  color:var(--cream);margin:0;align-self:end;text-wrap:balance;
+}
+.foot{
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:"Manrope",sans-serif;font-size:22px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--tan);
+  padding-top:24px;border-top:1px dashed var(--brown-2);margin-right:36px;
+}
+.foot__right{
+  display:flex;align-items:center;gap:14px;
+  text-transform:lowercase;letter-spacing:-.01em;font-size:28px;color:var(--cream);
+}
+.foot__arr{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:36px;}
+</style>
+</head>
+<body>
+<article class="poster">
+  <header class="band-1">
+    <span class="brand" aria-label="seuCas&oacute;rio">
+      <span class="seu">seu</span><span class="cas">C.</span>
+    </span>
+    <span class="kicker">Detalhes &middot; {{NUMERO}}</span>
+  </header>
+  <section class="band-2">
+    <h2 class="head-out">{{TITULO}}</h2>
+    <p class="head-ital">{{TITULO_2}}</p>
+  </section>
+  <section class="band-3">
+    <h1 class="head-solid">{{TITULO_3}}</h1>
+    <footer class="foot">
+      <span>seucasorio.com.br / detalhes</span>
+      <span class="foot__right">arraste <span class="foot__arr">&rarr;</span></span>
+    </footer>
+  </section>
+</article>
+</body>
+</html>

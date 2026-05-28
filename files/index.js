@@ -544,13 +544,22 @@ async function getCarouselBrowser() {
 
 // --- template cache (loaded once at boot) ---
 const TEMPLATES_DIR = path.join(__dirname, 'templates', 'carousel');
+const SERIE2_DIR   = path.join(__dirname, 'templates', 'serie-02');
 const templateCache = {};
 
 function loadTemplates() {
+  // Serie 01 (carousel padrão)
   const names = ['slide-capa', 'slide-conteudo', 'slide-resumo', 'slide-cta'];
   for (const name of names) {
     templateCache[name] = fs.readFileSync(path.join(TEMPLATES_DIR, `${name}.html`), 'utf8');
   }
+
+  // Serie 02 (paleta editorial cream/tan/brown)
+  const serie2names = ['capa', 'conteudo', 'conteudo-02', 'conteudo-03', 'conteudo-04', 'conteudo-05', 'conteudo-06', 'cta'];
+  for (const name of serie2names) {
+    templateCache[`s2-${name}`] = fs.readFileSync(path.join(SERIE2_DIR, `slide-${name}.html`), 'utf8');
+  }
+
   console.log(JSON.stringify({ event: 'carousel_templates_loaded', templates: Object.keys(templateCache) }));
 }
 
@@ -592,8 +601,46 @@ async function renderSlide(htmlContent) {
 
 const ETIQUETA_VALUES = new Set(['Tendência', 'Mercado', 'Inspiração']);
 
+// --- serie 02: fill template placeholders ---
+function buildSerie2Html(slide, total) {
+  const tipo = slide.tipo;
+  const cacheKey = `s2-${tipo}`;
+  const template = templateCache[cacheKey];
+  if (!template) throw new Error(`template série 2 "${tipo}" não encontrado`);
+
+  const { titulo, texto, etiqueta, subtitulo } = slide;
+  const titulo2 = slide.titulo_2 || slide.titulo2 || '';
+  const titulo3 = slide.titulo_3 || slide.titulo3 || '';
+  const numLabel = `${slide.numero}/${total}`;
+  const imagemUrl = slide.imagem_url || slide.imagemUrl || slide.image_url || '';
+  const imagemHtml = imagemUrl
+    ? `<img src="${escapeXml(imagemUrl)}" alt="" />`
+    : `<div class="ph" data-label="[ FOTO ]"></div>`;
+  const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
+
+  // conteudo-06 = resumo: converte texto (linhas) em <li>
+  const bullets = tipo === 'conteudo-06'
+    ? String(texto || '').split('\n').map(l => l.trim()).filter(Boolean)
+        .map(l => `<li class="item"><p class="item__body">${escapeXml(l)}</p></li>`).join('\n')
+    : '';
+
+  return template
+    .replace(/\{\{TITULO\}\}/g,      escapeXml(titulo || ''))
+    .replace(/\{\{TITULO_2\}\}/g,    escapeXml(titulo2))
+    .replace(/\{\{TITULO_3\}\}/g,    escapeXml(titulo3))
+    .replace(/\{\{SUBTITULO\}\}/g,   escapeXml(subtitulo || titulo || ''))
+    .replace(/\{\{TEXTO\}\}/g,       escapeXml(texto || ''))
+    .replace(/\{\{ETIQUETA\}\}/g,    escapeXml(etiqueta || ''))
+    .replace(/\{\{NUMERO\}\}/g,      escapeXml(numLabel))
+    .replace(/\{\{IMAGEM_HTML\}\}/g, imagemHtml)
+    .replace(/\{\{BULLETS\}\}/g,     bullets)
+    .replace(/\{\{BASE_URL\}\}/g,    baseUrl);
+}
+
 // --- fill template placeholders with escaped slide data ---
-function buildSlideHtml(slide, total) {
+function buildSlideHtml(slide, total, serie = '01') {
+  if (serie === '02') return buildSerie2Html(slide, total);
+
   // normalize: if tipo is actually an etiqueta value, treat slide as 'conteudo'
   const tipoRaw = slide.tipo;
   const tipo = ETIQUETA_VALUES.has(tipoRaw) ? 'conteudo' : tipoRaw;
@@ -658,13 +705,13 @@ function buildSlideHtml(slide, total) {
 }
 
 app.post('/carousel', async (req, res) => {
-  const { artigo_id, slides } = req.body;
+  const { artigo_id, slides, serie = '01' } = req.body;
 
   if (!artigo_id || typeof artigo_id !== 'string') {
     return res.status(400).json({ error: 'artigo_id é obrigatório' });
   }
-  if (!Array.isArray(slides) || slides.length !== 7) {
-    return res.status(400).json({ error: '7 slides são obrigatórios' });
+  if (!Array.isArray(slides) || slides.length < 1) {
+    return res.status(400).json({ error: 'ao menos 1 slide é obrigatório' });
   }
 
   // Sanitize artigo_id to prevent path traversal
@@ -685,7 +732,7 @@ app.post('/carousel', async (req, res) => {
       slides.map(async (slide) => {
         let html;
         try {
-          html = buildSlideHtml(slide, slides.length);
+          html = buildSlideHtml(slide, slides.length, serie);
         } catch (buildErr) {
           const e = new Error(buildErr.message);
           e.slideNum = slide.numero;

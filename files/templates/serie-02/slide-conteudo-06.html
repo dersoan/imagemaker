@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Fraunces:ital,opsz,wght@1,9..144,500&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Manrope:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+/* Serie 02 — Conteudo-06 (resumo) | Placeholder: {{BULLETS}} */
+:root{
+  --bg:#ece2cf; --tan:#d8c4a4; --tan-2:#c9a878;
+  --brown:#8a4f1f; --brown-2:#5c3416; --brown-3:#2e1709;
+  --ink:var(--brown-3); --ink-mute:var(--brown-2); --accent:var(--brown-2);
+}
+*,*::before,*::after{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);font-family:"Manrope","Space Grotesk",sans-serif;}
+.poster{
+  width:1080px;height:1440px;background:var(--bg);color:var(--ink);
+  display:grid;grid-template-rows:150px auto auto 1fr auto;
+  padding:0 0 0 0;overflow:hidden;position:relative;
+}
+.poster::after{
+  content:"";position:absolute;top:0;right:0;
+  width:24px;height:100%;background:var(--brown-3);z-index:10;
+}
+.topbar{
+  background:var(--bg);padding:36px 80px;
+  display:flex;align-items:center;
+  border-bottom:1px solid var(--tan-2);
+}
+.brand{
+  width:80px;height:80px;border-radius:12px;
+  background:var(--brown-2);color:var(--bg);
+  display:grid;place-items:center;flex:none;text-align:center;
+  font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:600;
+}
+.brand .seu{font-size:16px;line-height:1;display:block;}
+.brand .cas{font-size:28px;line-height:1;display:block;margin-top:1px;}
+.head-wrap{
+  padding:60px 80px 28px;
+  display:flex;flex-direction:column;align-items:flex-start;gap:22px;
+}
+.headline{
+  font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:104px;line-height:.92;letter-spacing:-0.03em;
+  color:var(--ink);text-transform:uppercase;margin:0;
+}
+.pill{
+  background:var(--brown-2);color:var(--bg);
+  font-family:"Fraunces",serif;font-style:italic;font-weight:500;
+  font-size:56px;line-height:1;letter-spacing:-0.02em;
+  padding:10px 36px;display:inline-block;
+}
+.list{
+  list-style:none;margin:0;padding:0 80px;
+  border-top:2px dashed var(--tan-2);border-bottom:2px dashed var(--tan-2);
+  display:flex;flex-direction:column;align-self:start;
+}
+.list li,.item{padding:26px 0 26px 4px;}
+.item__body,.list li p{
+  font-family:"Manrope",sans-serif;font-weight:500;
+  font-size:34px;line-height:1.4;color:var(--ink);margin:0;
+}
+.foot{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:28px 80px 48px;margin-right:36px;
+  font-family:"Manrope",sans-serif;font-size:22px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute);
+  border-top:1px dashed var(--tan-2);
+}
+.foot__right{
+  display:flex;align-items:center;gap:14px;
+  text-transform:lowercase;letter-spacing:-.01em;font-size:28px;color:var(--brown-2);
+}
+.foot__arr{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:36px;}
+</style>
+</head>
+<body>
+<article class="poster">
+  <header class="topbar">
+    <span class="brand" aria-label="seuCas&oacute;rio">
+      <span class="seu">seu</span><span class="cas">C.</span>
+    </span>
+  </header>
+  <section class="head-wrap">
+    <h1 class="headline">Em resumo</h1>
+    <span class="pill">em alta</span>
+  </section>
+  <ul class="list">{{BULLETS}}</ul>
+  <div></div>
+  <footer class="foot">
+    <span>seucasorio.com.br / not&iacute;cias</span>
+    <span class="foot__right">arraste <span class="foot__arr">&rarr;</span></span>
+  </footer>
+</article>
+</body>
+</html>

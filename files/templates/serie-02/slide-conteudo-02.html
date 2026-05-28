@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Manrope:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+/* Serie 02 — Conteudo-02 | Placeholders: {{TITULO}} {{TITULO_2}} */
+:root{
+  --bg:#d8c4a4; --cream:#ece2cf; --brown-2:#5c3416; --brown-3:#2e1709; --accent:#5c3416;
+}
+*,*::before,*::after{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);font-family:"Manrope","Space Grotesk",sans-serif;}
+.poster{
+  width:1080px;height:1440px;background:var(--bg);color:var(--accent);
+  display:grid;grid-template-rows:auto 1fr auto;
+  overflow:hidden;position:relative;
+}
+.poster::after{
+  content:"";position:absolute;top:0;right:0;
+  width:24px;height:100%;background:var(--brown-2);z-index:5;
+}
+.topbar{
+  background:var(--cream);height:150px;padding:36px 80px;
+  display:flex;align-items:center;justify-content:flex-start;
+}
+.brand{
+  width:80px;height:80px;border-radius:12px;
+  background:var(--brown-2);color:var(--cream);
+  display:grid;place-items:center;flex:none;text-align:center;
+  font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:600;
+}
+.brand .seu{font-size:16px;line-height:1;display:block;}
+.brand .cas{font-size:28px;line-height:1;display:block;margin-top:1px;}
+.main{padding:100px 88px 60px;display:flex;flex-direction:column;justify-content:center;}
+.headline{
+  font-family:"Space Grotesk",sans-serif;font-weight:700;
+  font-size:132px;line-height:.94;letter-spacing:-0.035em;margin:0;text-wrap:balance;
+}
+.headline .outline{
+  display:block;color:transparent;
+  -webkit-text-stroke:3px var(--accent);margin-bottom:12px;
+}
+.headline .solid{display:block;color:var(--accent);}
+.foot{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0 88px 48px;margin-right:36px;
+  font-family:"Manrope",sans-serif;font-size:22px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--brown-3);
+}
+.foot__right{
+  display:flex;align-items:center;gap:14px;
+  text-transform:lowercase;letter-spacing:-.01em;font-size:28px;color:var(--brown-2);
+}
+.foot__arr{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:36px;}
+</style>
+</head>
+<body>
+<article class="poster">
+  <header class="topbar">
+    <span class="brand" aria-label="seuCas&oacute;rio">
+      <span class="seu">seu</span><span class="cas">C.</span>
+    </span>
+  </header>
+  <section class="main">
+    <h1 class="headline">
+      <span class="outline">{{TITULO}}</span>
+      <span class="solid">{{TITULO_2}}</span>
+    </h1>
+  </section>
+  <footer class="foot">
+    <span>seucasorio.com.br / detalhes</span>
+    <span class="foot__right">arraste <span class="foot__arr">&rarr;</span></span>
+  </footer>
+</article>
+</body>
+</html>
