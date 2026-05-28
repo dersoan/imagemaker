@@ -13,6 +13,8 @@ const STORAGE_DIR = path.join(__dirname, 'public', 'storage');
 const APP_VERSION = process.env.APP_VERSION || '2026-05-20-story-text-v3';
 const DEFAULT_STORY_TEXT =
   process.env.DEFAULT_STORY_TEXT || 'Para ler a noticia digite news na DM que enviaremos para voce';
+const DEFAULT_CAROUSEL_STORY_TEXT =
+  process.env.DEFAULT_CAROUSEL_STORY_TEXT || 'Siga a gente para mais';
 
 if (!fs.existsSync(IMAGES_DIR)) {
   fs.mkdirSync(IMAGES_DIR, { recursive: true });
@@ -713,7 +715,16 @@ function buildSlideHtml(slide, total, serie = '01') {
 }
 
 app.post('/carousel', async (req, res) => {
-  const { artigo_id, slides, serie = '01' } = req.body;
+  const {
+    artigo_id,
+    slides,
+    serie = '01',
+    generate_story = false,
+    story_slide = 1,
+    story_width = 1080,
+    story_height = 1920,
+  } = req.body;
+  const storyText = resolveStoryText(req.body) || DEFAULT_CAROUSEL_STORY_TEXT;
 
   if (!artigo_id || typeof artigo_id !== 'string') {
     return res.status(400).json({ error: 'artigo_id é obrigatório' });
@@ -733,7 +744,7 @@ app.post('/carousel', async (req, res) => {
 
   const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
 
-  console.log(JSON.stringify({ event: 'carousel_request', artigo_id: safeId, serie, slides: slides.length }));
+  console.log(JSON.stringify({ event: 'carousel_request', artigo_id: safeId, serie, slides: slides.length, generate_story }));
 
   try {
     const images = await Promise.all(
@@ -767,8 +778,30 @@ app.post('/carousel', async (req, res) => {
       })
     );
 
+    let story = null;
+
+    if (generate_story) {
+      const targetSlide = images.find(img => img.numero === story_slide) || images[0];
+      const sourceFilename = `slide-${targetSlide.numero}.png`;
+      const sourcePath = path.join(outDir, sourceFilename);
+      const storyFilename = `story-slide-${targetSlide.numero}.jpg`;
+      const storyPath = path.join(outDir, storyFilename);
+
+      await createStoryFromPost(sourcePath, storyPath, Number(story_width), Number(story_height), storyText);
+
+      story = {
+        url: `${baseUrl}/output/${safeId}/${storyFilename}`,
+        source_slide: targetSlide.numero,
+        width: Number(story_width),
+        height: Number(story_height),
+        text: storyText || null,
+      };
+
+      console.log(JSON.stringify({ event: 'carousel_story_done', artigo_id: safeId, source_slide: targetSlide.numero }));
+    }
+
     console.log(JSON.stringify({ event: 'carousel_done', artigo_id: safeId }));
-    return res.json({ artigo_id: safeId, images });
+    return res.json({ artigo_id: safeId, images, story });
   } catch (err) {
     console.error(JSON.stringify({ event: 'carousel_error', artigo_id: safeId, slide: err.slideNum, message: err.message }));
     return res.status(500).json({ error: `slide ${err.slideNum} falhou`, detail: err.message });

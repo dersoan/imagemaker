@@ -13,20 +13,20 @@
 *,*::before,*::after{box-sizing:border-box;}
 html,body{margin:0;padding:0;background:var(--bg);font-family:"Manrope","Space Grotesk",sans-serif;}
 .poster{
-  width:1080px;height:1440px;background:var(--bg);color:var(--accent);
+  inline-size:1080px;block-size:1440px;background:var(--bg);color:var(--accent);
   display:grid;grid-template-rows:auto 1fr auto;
   overflow:hidden;position:relative;
 }
 .poster::after{
-  content:"";position:absolute;top:0;right:0;
-  width:24px;height:100%;background:var(--brown-2);z-index:5;
+  content:"";position:absolute;inset-block-start:0;inset-inline-end:0;
+  inline-size:24px;block-size:100%;background:var(--brown-2);z-index:5;
 }
 .topbar{
-  background:var(--cream);height:150px;padding:36px 80px;
+  background:var(--cream);block-size:150px;padding:36px 80px;
   display:flex;align-items:center;justify-content:flex-start;
 }
-.brand{width:125px;height:125px;flex:none;margin:0;padding:0;display:grid;place-items:center;}
-.brand img{width:125px;height:125px;object-fit:contain;display:block;}
+.brand{inline-size:125px;block-size:125px;flex:none;margin:0;padding:0;display:grid;place-items:center;}
+.brand img{inline-size:125px;block-size:125px;object-fit:contain;display:block;}
 .main{padding:100px 88px 60px;display:flex;flex-direction:column;justify-content:center;}
 .headline{
   font-family:"Space Grotesk",sans-serif;font-weight:700;
@@ -34,12 +34,12 @@ html,body{margin:0;padding:0;background:var(--bg);font-family:"Manrope","Space G
 }
 .headline .outline{
   display:block;color:transparent;
-  -webkit-text-stroke:3px var(--accent);margin-bottom:12px;
+  -webkit-text-stroke:3px var(--accent);margin-block-end:12px;
 }
 .headline .solid{display:block;color:var(--accent);}
 .foot{
   display:flex;justify-content:space-between;align-items:center;
-  padding:0 88px 48px;margin-right:36px;
+  padding:0 88px 48px;margin-inline-end:36px;
   font-family:"Manrope",sans-serif;font-size:22px;
   letter-spacing:.14em;text-transform:uppercase;color:var(--brown-3);
 }
