@@ -594,6 +594,13 @@ async function renderSlide(htmlContent) {
     await page.evaluate(async () => {
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
     }).catch(() => {});
+    await page.evaluate(async () => {
+      const imgs = Array.from(document.querySelectorAll('img'));
+      await Promise.all(imgs.map(img => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+      }));
+    }).catch(() => {});
     return await page.screenshot({
       type: 'png',
       clip: { x: 0, y: 0, width: 1080, height: 1440 },
@@ -619,8 +626,9 @@ function buildSerie2Html(slide, total) {
     texto:  'Acesse o guia mais completo de casamentos do Brasil.',
   } : {};
   const { titulo, texto, etiqueta, subtitulo } = { ...ctaDefaults, ...slide };
-  const titulo2 = slide.titulo_2 || slide.titulo2 || '';
-  const titulo3 = slide.titulo_3 || slide.titulo3 || '';
+  const textoLines = String(texto || '').split('\n').map(l => l.trim()).filter(Boolean);
+  const titulo2 = slide.titulo_2 || slide.titulo2 || subtitulo || '';
+  const titulo3 = slide.titulo_3 || slide.titulo3 || (tipo === 'conteudo-03' ? textoLines.pop() || '' : '');
   const numLabel = `${slide.numero}/${total}`;
   const imagemUrl = slide.imagem_url || slide.imagemUrl || slide.image_url || '';
   const imagemHtml = imagemUrl
@@ -656,7 +664,7 @@ function buildSlideHtml(slide, total, serie = '01') {
   const tipo = ETIQUETA_VALUES.has(tipoRaw) ? 'conteudo' : tipoRaw;
   const etiquetaResolved = ETIQUETA_VALUES.has(tipoRaw) ? tipoRaw : (slide.etiqueta || '');
 
-  const { numero, titulo, texto } = slide;
+  const { numero, titulo, subtitulo, texto } = slide;
   const numLabel = `${numero}/${total}`;
 
   if (tipo === 'capa') {
@@ -686,6 +694,7 @@ function buildSlideHtml(slide, total, serie = '01') {
 
     return templateCache['slide-conteudo']
       .replace(/\{\{TITULO\}\}/g,      escapeXml(titulo))
+      .replace(/\{\{SUBTITULO\}\}/g,   escapeXml(subtitulo || ''))
       .replace(/\{\{TEXTO\}\}/g,       escapeXml(texto))
       .replace(/\{\{NUMERO\}\}/g,      escapeXml(numLabel))
       .replace(/\{\{CLASSE_BG\}\}/g,   classeBg)
