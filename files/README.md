@@ -13,6 +13,36 @@ Deploy gerenciado via **Coolify**.
 | `GET` | `/output/:artigo_id/:filename` | Serve slides de carousel |
 | `POST` | `/generate` | Gera imagem de post + story via Puppeteer |
 | `POST` | `/carousel` | Gera slides de carousel (série 01 ou 02) |
+| `POST` | `/upload/video` | Recebe e publica um vídeo MP4 autenticado |
+
+---
+
+## POST /upload/video
+
+Recebe um único arquivo `multipart/form-data` no campo `video`. O endpoint exige
+a chave configurada em `VIDEO_UPLOAD_API_KEY`, aceita o cabeçalho `X-API-Key`
+ou `Authorization: Bearer`, valida extensão, MIME, tamanho e assinatura do MP4,
+e publica o arquivo em `/output/videos/`.
+
+```bash
+curl -X POST https://imagemaker.seucasorio.com/upload/video \
+  -H "X-API-Key: SUA_CHAVE" \
+  -F "video=@video-123.mp4;type=video/mp4"
+```
+
+Resposta (`201 Created`):
+
+```json
+{
+  "url": "https://imagemaker.seucasorio.com/output/videos/video-123.mp4",
+  "filename": "video-123.mp4",
+  "size": 12345678,
+  "mime_type": "video/mp4"
+}
+```
+
+O nome real é gerado com UUID pelo servidor. O limite padrão é 100 MB e pode
+ser alterado por `VIDEO_UPLOAD_MAX_BYTES`.
 
 ---
 
@@ -196,6 +226,8 @@ Configurar no painel **Environment Variables**:
 | `PORT` | `3000` |
 | `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` | `true` |
 | `PUPPETEER_EXECUTABLE_PATH` | `/usr/bin/chromium` |
+| `VIDEO_UPLOAD_API_KEY` | Chave longa e aleatória usada pelo CasorioHub |
+| `VIDEO_UPLOAD_MAX_BYTES` | `104857600` (opcional; padrão de 100 MB) |
 
 > ⚠️ `BASE_URL` é crítico — define o domínio das URLs retornadas pela API e salvas no banco.
 
@@ -207,6 +239,9 @@ Configurar no painel **Storages** (sem isso, imagens somem a cada restart):
 |-------------|---------------|
 | `imagemaker-images` | `/app/public/images` |
 | `imagemaker-output` | `/app/output` |
+
+Os vídeos usam o volume `imagemaker-output`, portanto não exigem um terceiro
+volume. Sem esse volume, eles serão apagados quando o container for recriado.
 
 ### 3. Build
 

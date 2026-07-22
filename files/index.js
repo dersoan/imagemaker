@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const puppeteer = require('puppeteer');
 const sharp = require('sharp');
 const crypto = require('crypto');
@@ -528,6 +529,162 @@ const OUTPUT_DIR = path.join(__dirname, 'output');
 if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 app.use('/output', express.static(OUTPUT_DIR));
 
+// --- authenticated MP4 upload ---
+const VIDEOS_DIR = path.join(OUTPUT_DIR, 'videos');
+const VIDEO_UPLOADS_TMP_DIR = path.join(OUTPUT_DIR, '.video-uploads');
+const VIDEO_UPLOAD_API_KEY = process.env.VIDEO_UPLOAD_API_KEY || '';
+const parsedVideoUploadMaxBytes = Number.parseInt(process.env.VIDEO_UPLOAD_MAX_BYTES || '', 10);
+const VIDEO_UPLOAD_MAX_BYTES = Number.isSafeInteger(parsedVideoUploadMaxBytes) && parsedVideoUploadMaxBytes > 0
+  ? parsedVideoUploadMaxBytes
+  : 100 * 1024 * 1024;
+
+fs.mkdirSync(VIDEOS_DIR, { recursive: true });
+fs.mkdirSync(VIDEO_UPLOADS_TMP_DIR, { recursive: true });
+
+function safeKeyMatches(receivedKey, expectedKey) {
+  if (!receivedKey || !expectedKey) return false;
+
+  const received = Buffer.from(receivedKey);
+  const expected = Buffer.from(expectedKey);
+
+  return received.length === expected.length && crypto.timingSafeEqual(received, expected);
+}
+
+function requireVideoUploadApiKey(req, res, next) {
+  if (!VIDEO_UPLOAD_API_KEY) {
+    return res.status(503).json({
+      error: 'upload_not_configured',
+      message: 'O upload de vídeos não está configurado no servidor',
+    });
+  }
+
+  const authorization = req.get('authorization') || '';
+  const bearerMatch = authorization.match(/^Bearer\s+(.+)$/i);
+  const receivedKey = req.get('x-api-key') || (bearerMatch ? bearerMatch[1].trim() : '');
+
+  if (!safeKeyMatches(receivedKey, VIDEO_UPLOAD_API_KEY)) {
+    return res.status(401).json({
+      error: 'unauthorized',
+      message: 'Chave de autenticação inválida ou ausente',
+    });
+  }
+
+  return next();
+}
+
+const videoUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, callback) => callback(null, VIDEO_UPLOADS_TMP_DIR),
+    filename: (req, file, callback) => callback(null, `${crypto.randomUUID()}.upload`),
+  }),
+  limits: {
+    fileSize: VIDEO_UPLOAD_MAX_BYTES,
+    files: 1,
+    fields: 0,
+  },
+  fileFilter: (req, file, callback) => {
+    const extensionIsMp4 = path.extname(file.originalname || '').toLowerCase() === '.mp4';
+    const acceptedMimeTypes = new Set(['video/mp4', 'application/mp4', 'application/octet-stream']);
+
+    if (!extensionIsMp4 || !acceptedMimeTypes.has((file.mimetype || '').toLowerCase())) {
+      const error = new Error('Apenas arquivos MP4 são aceitos');
+      error.code = 'INVALID_VIDEO_TYPE';
+      return callback(error);
+    }
+
+    return callback(null, true);
+  },
+});
+
+async function removeFileIfPresent(filePath) {
+  if (!filePath) return;
+  await fs.promises.unlink(filePath).catch(() => {});
+}
+
+async function hasMp4Signature(filePath) {
+  const fileHandle = await fs.promises.open(filePath, 'r');
+
+  try {
+    const header = Buffer.alloc(12);
+    const { bytesRead } = await fileHandle.read(header, 0, header.length, 0);
+    return bytesRead === header.length && header.toString('ascii', 4, 8) === 'ftyp';
+  } finally {
+    await fileHandle.close();
+  }
+}
+
+app.post('/upload/video', requireVideoUploadApiKey, (req, res) => {
+  videoUpload.single('video')(req, res, async (uploadError) => {
+    if (uploadError) {
+      await removeFileIfPresent(req.file && req.file.path);
+
+      if (uploadError.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          error: 'file_too_large',
+          message: `O vídeo excede o limite de ${VIDEO_UPLOAD_MAX_BYTES} bytes`,
+          max_size_bytes: VIDEO_UPLOAD_MAX_BYTES,
+        });
+      }
+
+      if (uploadError.code === 'INVALID_VIDEO_TYPE') {
+        return res.status(415).json({
+          error: 'invalid_video_type',
+          message: uploadError.message,
+        });
+      }
+
+      return res.status(400).json({
+        error: 'invalid_upload',
+        message: uploadError.message,
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        error: 'video_required',
+        message: 'Envie o arquivo MP4 no campo "video"',
+      });
+    }
+
+    try {
+      if (!(await hasMp4Signature(req.file.path))) {
+        await removeFileIfPresent(req.file.path);
+        return res.status(415).json({
+          error: 'invalid_mp4',
+          message: 'O conteúdo enviado não é um arquivo MP4 válido',
+        });
+      }
+
+      const filename = `video-${crypto.randomUUID()}.mp4`;
+      const finalPath = path.join(VIDEOS_DIR, filename);
+      await fs.promises.rename(req.file.path, finalPath);
+
+      const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
+      const url = `${baseUrl}/output/videos/${filename}`;
+
+      console.log(JSON.stringify({
+        event: 'video_upload_done',
+        filename,
+        size: req.file.size,
+      }));
+
+      return res.status(201).json({
+        url,
+        filename,
+        size: req.file.size,
+        mime_type: 'video/mp4',
+      });
+    } catch (err) {
+      await removeFileIfPresent(req.file.path);
+      console.error(JSON.stringify({ event: 'video_upload_error', message: err.message }));
+      return res.status(500).json({
+        error: 'video_upload_failed',
+        message: 'Não foi possível salvar o vídeo',
+      });
+    }
+  });
+});
+
 // --- singleton browser for carousel ---
 let carouselBrowser = null;
 
@@ -837,6 +994,10 @@ loadTemplates();
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`ImageMaker rodando na porta ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`ImageMaker rodando na porta ${PORT}`);
+  });
+}
+
+module.exports = { app };
