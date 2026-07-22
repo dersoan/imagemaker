@@ -56,10 +56,14 @@ ser alterado por `VIDEO_UPLOAD_MAX_BYTES`.
 | `serie` | `"01"` \| `"02"` | ✅ | Série de templates a usar |
 | `slides` | array | ✅ | Lista de slides (mínimo 1) |
 
-Cada slide também pode receber `video_url` (ou `videoUrl`). Quando informado, o
-resultado desse slide terá `media_type: "VIDEO"`; a imagem continuará sendo
-gerada e retornada em `imagem_url` como capa/fallback. Sem vídeo, o resultado
-terá `media_type: "IMAGE"` e `video_url: null`.
+A capa da série 02 pode receber `video_url` (ou `videoUrl`) com a URL pública do
+MP4 original. O ImageMaker recorta o vídeo para preencher exatamente o retângulo
+`[ FOTO ]`, preserva título, etiqueta, fundo e rodapé, e gera um novo MP4 em
+1080×1440. A URL desse arquivo composto é retornada em `video_url`; a imagem
+continua disponível em `imagem_url` como capa/fallback.
+
+Vídeo em outros tipos de slide ou em outra série retorna `400`, pois esses
+templates não possuem uma área de vídeo definida.
 
 > ⚠️ **Sempre passe `serie`** — identifica qual conjunto visual usar.
 
@@ -98,8 +102,7 @@ terá `media_type: "IMAGE"` e `video_url: null`.
       "numero": 2,
       "titulo": "Corsets modernos",
       "texto": "Voltam com força para os vestidos de noiva em 2026.",
-      "etiqueta": "Tendência",
-      "video_url": "https://servidor.com/videos/corsets-modernos.mp4"
+      "etiqueta": "Tendência"
     },
     {
       "tipo": "resumo",
@@ -113,19 +116,6 @@ terá `media_type: "IMAGE"` e `video_url: null`.
       "texto": "Manda uma DM com 'tendência 2027'!"
     }
   ]
-}
-```
-
-Para o slide acima, a resposta inclui:
-
-```json
-{
-  "numero": 2,
-  "tipo": "conteudo",
-  "url": "https://imagemaker.seucasorio.com/output/meu-artigo-01/slide-2.png",
-  "media_type": "VIDEO",
-  "imagem_url": "https://imagemaker.seucasorio.com/output/meu-artigo-01/slide-2.png",
-  "video_url": "https://servidor.com/videos/corsets-modernos.mp4"
 }
 ```
 
@@ -158,7 +148,8 @@ Para o slide acima, a resposta inclui:
       "numero": 1,
       "titulo": "O detalhe que vai transformar seu casamento em 2026",
       "etiqueta": "imperdível",
-      "imagem_url": "https://..."
+      "imagem_url": "https://...",
+      "video_url": "https://imagemaker.seucasorio.com/output/videos/video-original.mp4"
     },
     {
       "tipo": "conteudo",
@@ -212,6 +203,22 @@ Para o slide acima, a resposta inclui:
 }
 ```
 
+Para a capa acima, a resposta inclui:
+
+```json
+{
+  "numero": 1,
+  "tipo": "capa",
+  "url": "https://imagemaker.seucasorio.com/output/meu-artigo-02/slide-1.png",
+  "media_type": "VIDEO",
+  "imagem_url": "https://imagemaker.seucasorio.com/output/meu-artigo-02/slide-1.png",
+  "video_url": "https://imagemaker.seucasorio.com/output/meu-artigo-02/slide-1.mp4"
+}
+```
+
+A URL de entrada nunca é devolvida como mídia final; `video_url` aponta para o
+MP4 já composto pelo ImageMaker.
+
 ---
 
 ## Deploy no Coolify
@@ -228,6 +235,8 @@ Configurar no painel **Environment Variables**:
 | `PUPPETEER_EXECUTABLE_PATH` | `/usr/bin/chromium` |
 | `VIDEO_UPLOAD_API_KEY` | Chave longa e aleatória usada pelo CasorioHub |
 | `VIDEO_UPLOAD_MAX_BYTES` | `104857600` (opcional; padrão de 100 MB) |
+| `FFMPEG_EXECUTABLE_PATH` | `/usr/bin/ffmpeg` (opcional) |
+| `VIDEO_RENDER_TIMEOUT_MS` | `900000` (opcional; padrão de 15 minutos) |
 
 > ⚠️ `BASE_URL` é crítico — define o domínio das URLs retornadas pela API e salvas no banco.
 

@@ -5,13 +5,14 @@ const sharp = require('sharp');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
 const IMAGES_DIR = path.join(__dirname, 'public', 'images');
 const STORAGE_DIR = path.join(__dirname, 'public', 'storage');
-const APP_VERSION = process.env.APP_VERSION || '2026-05-20-story-text-v3';
+const APP_VERSION = process.env.APP_VERSION || '2026-07-22-video-compose-v1';
 const DEFAULT_STORY_TEXT =
   process.env.DEFAULT_STORY_TEXT || 'Para ler a noticia digite news na DM que enviaremos para voce';
 const DEFAULT_CAROUSEL_STORY_TEXT =
@@ -66,6 +67,15 @@ function escapeXml(value = '') {
 function resolveVideoUrl(slide = {}) {
   const candidate = slide.video_url || slide.videoUrl;
   return typeof candidate === 'string' && candidate.trim() ? candidate.trim() : null;
+}
+
+function isHttpUrl(value) {
+  try {
+    const parsedUrl = new URL(value);
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 function wrapStoryText(text, maxCharsPerLine = 28, maxLines = 3) {
@@ -742,6 +752,110 @@ function createSemaphore(limit) {
   };
 }
 const carouselSemaphore = createSemaphore(3);
+const videoRenderSemaphore = createSemaphore(1);
+const parsedVideoRenderTimeoutMs = Number.parseInt(process.env.VIDEO_RENDER_TIMEOUT_MS || '', 10);
+const VIDEO_RENDER_TIMEOUT_MS = Number.isSafeInteger(parsedVideoRenderTimeoutMs) && parsedVideoRenderTimeoutMs > 0
+  ? parsedVideoRenderTimeoutMs
+  : 15 * 60 * 1000;
+
+function runFfmpeg(args) {
+  const executable = process.env.FFMPEG_EXECUTABLE_PATH || 'ffmpeg';
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(executable, args, {
+      windowsHide: true,
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
+    let stderr = '';
+    let settled = false;
+
+    const timeout = setTimeout(() => {
+      child.kill('SIGKILL');
+      if (!settled) {
+        settled = true;
+        reject(new Error(`FFmpeg excedeu o tempo limite de ${VIDEO_RENDER_TIMEOUT_MS} ms`));
+      }
+    }, VIDEO_RENDER_TIMEOUT_MS);
+
+    child.stderr.on('data', (chunk) => {
+      stderr = `${stderr}${chunk}`.slice(-12000);
+    });
+
+    child.once('error', (err) => {
+      clearTimeout(timeout);
+      if (!settled) {
+        settled = true;
+        reject(new Error(`Não foi possível executar FFmpeg: ${err.message}`));
+      }
+    });
+
+    child.once('close', (code) => {
+      clearTimeout(timeout);
+      if (settled) return;
+      settled = true;
+
+      if (code === 0) {
+        resolve();
+        return;
+      }
+
+      reject(new Error(`FFmpeg encerrou com código ${code}: ${stderr.trim()}`));
+    });
+  });
+}
+
+async function composeCarouselVideo({ sourceUrl, templatePath, outputPath, slot }) {
+  const release = await videoRenderSemaphore();
+
+  try {
+    if (
+      !slot ||
+      slot.width < 2 ||
+      slot.height < 2 ||
+      slot.x < 0 ||
+      slot.y < 0 ||
+      slot.x + slot.width > 1080 ||
+      slot.y + slot.height > 1440
+    ) {
+      throw new Error('Área de vídeo inválida ou ausente no template');
+    }
+
+    await removeFileIfPresent(outputPath);
+
+    const filter =
+      `[0:v]scale=${slot.width}:${slot.height}:force_original_aspect_ratio=increase,` +
+      `crop=${slot.width}:${slot.height},fps=30,setsar=1[video];` +
+      `[1:v]fps=30[template];` +
+      `[template][video]overlay=${slot.x}:${slot.y}:shortest=1,format=yuv420p[outv]`;
+
+    await runFfmpeg([
+      '-hide_banner',
+      '-loglevel', 'error',
+      '-y',
+      '-i', sourceUrl,
+      '-loop', '1',
+      '-framerate', '30',
+      '-i', templatePath,
+      '-filter_complex', filter,
+      '-map', '[outv]',
+      '-map', '0:a?',
+      '-c:v', 'libx264',
+      '-preset', 'veryfast',
+      '-crf', '20',
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-ar', '48000',
+      '-movflags', '+faststart',
+      '-shortest',
+      outputPath,
+    ]);
+  } catch (err) {
+    await removeFileIfPresent(outputPath);
+    throw err;
+  } finally {
+    release();
+  }
+}
 
 // --- render a single slide HTML → PNG buffer ---
 async function renderSlide(htmlContent) {
@@ -763,10 +877,25 @@ async function renderSlide(htmlContent) {
         return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
       }));
     }).catch(() => {});
-    return await page.screenshot({
+    const videoSlot = await page.evaluate(() => {
+      const element = document.querySelector('[data-video-slot]');
+      if (!element) return null;
+
+      const rect = element.getBoundingClientRect();
+      return {
+        x: Math.round(rect.x),
+        y: Math.round(rect.y),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      };
+    });
+
+    const screenshot = await page.screenshot({
       type: 'png',
       clip: { x: 0, y: 0, width: 1080, height: 1440 },
     });
+
+    return { screenshot, videoSlot };
   } finally {
     await page.close().catch(() => {});
     release();
@@ -793,9 +922,10 @@ function buildSerie2Html(slide, total) {
   const titulo3 = slide.titulo_3 || slide.titulo3 || (tipo === 'conteudo-03' ? textoLines.pop() || '' : '');
   const numLabel = `${slide.numero}/${total}`;
   const imagemUrl = slide.imagem_url || slide.imagemUrl || slide.image_url || '';
+  const videoSlotAttribute = resolveVideoUrl(slide) ? ' data-video-slot="true"' : '';
   const imagemHtml = imagemUrl
-    ? `<img src="${escapeXml(imagemUrl)}" alt="" />`
-    : `<div class="ph" data-label="[ FOTO ]"></div>`;
+    ? `<img src="${escapeXml(imagemUrl)}" alt=""${videoSlotAttribute} />`
+    : `<div class="ph" data-label="[ FOTO ]"${videoSlotAttribute}></div>`;
   const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
 
   // conteudo-06 = resumo: converte texto (linhas) em <li>
@@ -904,6 +1034,27 @@ app.post('/carousel', async (req, res) => {
     return res.status(400).json({ error: 'ao menos 1 slide é obrigatório' });
   }
 
+  for (const slide of slides) {
+    const sourceVideoUrl = resolveVideoUrl(slide);
+    if (!sourceVideoUrl) continue;
+
+    if (!isHttpUrl(sourceVideoUrl)) {
+      return res.status(400).json({
+        error: 'video_url inválida',
+        slide: slide.numero,
+        detail: 'video_url deve usar http ou https',
+      });
+    }
+
+    if (serie !== '02' || slide.tipo !== 'capa') {
+      return res.status(400).json({
+        error: 'template de vídeo não suportado',
+        slide: slide.numero,
+        detail: 'video_url é suportada apenas no slide capa da série 02',
+      });
+    }
+  }
+
   // Sanitize artigo_id to prevent path traversal
   const safeId = artigo_id.replace(/[^a-zA-Z0-9_-]/g, '');
   if (!safeId) {
@@ -929,9 +1080,9 @@ app.post('/carousel', async (req, res) => {
           throw e;
         }
 
-        let screenshot;
+        let renderedSlide;
         try {
-          screenshot = await renderSlide(html);
+          renderedSlide = await renderSlide(html);
         } catch (renderErr) {
           const e = new Error(renderErr.message);
           e.slideNum = slide.numero;
@@ -939,10 +1090,45 @@ app.post('/carousel', async (req, res) => {
         }
 
         const filename = `slide-${slide.numero}.png`;
-        fs.writeFileSync(path.join(outDir, filename), screenshot);
+        const imagePath = path.join(outDir, filename);
+        fs.writeFileSync(imagePath, renderedSlide.screenshot);
 
         const imagemUrl = `${baseUrl}/output/${safeId}/${filename}`;
-        const videoUrl = resolveVideoUrl(slide);
+        const sourceVideoUrl = resolveVideoUrl(slide);
+        let videoUrl = null;
+
+        if (sourceVideoUrl) {
+          const videoFilename = `slide-${slide.numero}.mp4`;
+          const videoPath = path.join(outDir, videoFilename);
+
+          console.log(JSON.stringify({
+            event: 'carousel_video_render_start',
+            artigo_id: safeId,
+            slide: slide.numero,
+            slot: renderedSlide.videoSlot,
+          }));
+
+          try {
+            await composeCarouselVideo({
+              sourceUrl: sourceVideoUrl,
+              templatePath: imagePath,
+              outputPath: videoPath,
+              slot: renderedSlide.videoSlot,
+            });
+          } catch (videoErr) {
+            const e = new Error(videoErr.message);
+            e.slideNum = slide.numero;
+            throw e;
+          }
+
+          videoUrl = `${baseUrl}/output/${safeId}/${videoFilename}`;
+          console.log(JSON.stringify({
+            event: 'carousel_video_render_done',
+            artigo_id: safeId,
+            slide: slide.numero,
+            video_url: videoUrl,
+          }));
+        }
 
         return {
           numero: slide.numero,

@@ -1,6 +1,7 @@
 # Puppeter
 
-Repositorio com uma aplicacao Node.js que gera imagens usando Puppeteer e Chrome.
+Repositorio com uma aplicacao Node.js que gera imagens usando Puppeteer e Chrome
+e compõe vídeos de carrossel com FFmpeg.
 
 ## Estrutura
 

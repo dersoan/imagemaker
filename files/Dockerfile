@@ -3,6 +3,7 @@ FROM node:20-slim
 # Instala dependências do Chrome
 RUN apt-get update && apt-get install -y \
     chromium \
+    ffmpeg \
     fonts-liberation \
     fonts-noto-color-emoji \
     --no-install-recommends \

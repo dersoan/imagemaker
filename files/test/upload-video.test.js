@@ -102,6 +102,48 @@ test('recusa vídeo acima do limite configurado', async () => {
   assert.equal(result.max_size_bytes, 32);
 });
 
+test('recusa video_url fora da capa da série 02', async () => {
+  const response = await fetch(`${baseUrl}/carousel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      artigo_id: 'video-template-invalido',
+      serie: '01',
+      slides: [{
+        numero: 1,
+        tipo: 'capa',
+        titulo: 'Teste',
+        video_url: `${baseUrl}/output/videos/video-origem.mp4`,
+      }],
+    }),
+  });
+  const result = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.equal(result.error, 'template de vídeo não suportado');
+});
+
+test('recusa video_url sem HTTP na capa da série 02', async () => {
+  const response = await fetch(`${baseUrl}/carousel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      artigo_id: 'video-url-invalida',
+      serie: '02',
+      slides: [{
+        numero: 1,
+        tipo: 'capa',
+        titulo: 'Teste',
+        video_url: 'file:///etc/passwd',
+      }],
+    }),
+  });
+  const result = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.equal(result.error, 'video_url inválida');
+});
+
 test('salva MP4 válido e o disponibiliza pela URL pública', async () => {
   const mp4 = makeMinimalMp4();
   const response = await fetch(`${baseUrl}/upload/video`, {
