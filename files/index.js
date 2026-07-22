@@ -62,6 +62,11 @@ function escapeXml(value = '') {
     .replace(/'/g, '&apos;');
 }
 
+function resolveVideoUrl(slide = {}) {
+  const candidate = slide.video_url || slide.videoUrl;
+  return typeof candidate === 'string' && candidate.trim() ? candidate.trim() : null;
+}
+
 function wrapStoryText(text, maxCharsPerLine = 28, maxLines = 3) {
   const normalizedText = String(text || '')
     .replace(/\s+/g, ' ')
@@ -779,10 +784,17 @@ app.post('/carousel', async (req, res) => {
         const filename = `slide-${slide.numero}.png`;
         fs.writeFileSync(path.join(outDir, filename), screenshot);
 
+        const imagemUrl = `${baseUrl}/output/${safeId}/${filename}`;
+        const videoUrl = resolveVideoUrl(slide);
+
         return {
           numero: slide.numero,
           tipo: slide.tipo,
-          url: `${baseUrl}/output/${safeId}/${filename}`,
+          // `url` is kept for backwards compatibility with existing consumers.
+          url: imagemUrl,
+          media_type: videoUrl ? 'VIDEO' : 'IMAGE',
+          imagem_url: imagemUrl,
+          video_url: videoUrl,
         };
       })
     );

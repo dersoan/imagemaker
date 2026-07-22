@@ -26,6 +26,11 @@ Deploy gerenciado via **Coolify**.
 | `serie` | `"01"` \| `"02"` | ✅ | Série de templates a usar |
 | `slides` | array | ✅ | Lista de slides (mínimo 1) |
 
+Cada slide também pode receber `video_url` (ou `videoUrl`). Quando informado, o
+resultado desse slide terá `media_type: "VIDEO"`; a imagem continuará sendo
+gerada e retornada em `imagem_url` como capa/fallback. Sem vídeo, o resultado
+terá `media_type: "IMAGE"` e `video_url: null`.
+
 > ⚠️ **Sempre passe `serie`** — identifica qual conjunto visual usar.
 
 ---
@@ -63,7 +68,8 @@ Deploy gerenciado via **Coolify**.
       "numero": 2,
       "titulo": "Corsets modernos",
       "texto": "Voltam com força para os vestidos de noiva em 2026.",
-      "etiqueta": "Tendência"
+      "etiqueta": "Tendência",
+      "video_url": "https://servidor.com/videos/corsets-modernos.mp4"
     },
     {
       "tipo": "resumo",
@@ -77,6 +83,19 @@ Deploy gerenciado via **Coolify**.
       "texto": "Manda uma DM com 'tendência 2027'!"
     }
   ]
+}
+```
+
+Para o slide acima, a resposta inclui:
+
+```json
+{
+  "numero": 2,
+  "tipo": "conteudo",
+  "url": "https://imagemaker.seucasorio.com/output/meu-artigo-01/slide-2.png",
+  "media_type": "VIDEO",
+  "imagem_url": "https://imagemaker.seucasorio.com/output/meu-artigo-01/slide-2.png",
+  "video_url": "https://servidor.com/videos/corsets-modernos.mp4"
 }
 ```
 
